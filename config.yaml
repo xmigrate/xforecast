@@ -1,0 +1,50 @@
+prometheus_url: http://192.168.1.9:9000
+
+metrics:
+- name: windows_cpu_time_total  #metric name in prometheus
+  start_time: '2022-07-19T09:47:00.000Z'
+  end_time: '2022-07-19T09:48:00.000Z'
+  query: avg+by(instance)+(windows_cpu_time_total{mode="idle"})
+  training_interval: 1h #amount of data should be used for training
+  forecast_duration: 5m #How data points should be predicted, here it will predict for 5 mins
+  forecast_every: 1m #At what interval the app do the predictions 
+  forecast_basedon: 10m #Forecast based on past how many data points
+  write_back_metric: forecast_cpu_usage #Where should it write back the metrics
+- name: windows_os_physical_memory_free_bytes
+  start_time: '2022-07-19T09:47:00.000Z'
+  end_time: '2022-07-19T09:48:00.000Z'
+  query: sum+by(instance)+(windows_os_physical_memory_free_bytes)
+  training_interval: 1h #amount of data should be used for training
+  forecast_duration: 5m #How data points should be predicted, here it will predict for 5 mins
+  forecast_every: 1m #At what interval the app do the predictions 
+  forecast_basedon: 10m #Forecast based on past how many data points
+  write_back_metric: forecast_memory_usage #Where should it write back the metrics
+- name: windows_logical_disk_free_bytes
+  start_time: '2022-07-19T09:47:00.000Z'
+  end_time: '2022-07-19T09:48:00.000Z'
+  query: sum+by(instance)+(windows_logical_disk_free_bytes{job="wmi exporter"})
+  training_interval: 1h #amount of data should be used for training
+  forecast_duration: 5m #How data points should be predicted, here it will predict for 5 mins
+  forecast_every: 1m #At what interval the app do the predictions 
+  forecast_basedon: 10m #Forecast based on past how many data points
+  write_back_metric: forecast_cpu_usage #Where should it write back the metrics
+- name: windows_logical_disk_read_bytes_total
+  start_time: '2022-07-19T09:47:00.000Z'
+  end_time: '2022-07-19T09:48:00.000Z'
+  query: sum+by+(instance)+(windows_logical_disk_read_bytes_total)
+  training_interval: 1h #amount of data should be used for training
+  forecast_duration: 5m #How data points should be predicted, here it will predict for 5 mins
+  forecast_every: 1m #At what interval the app do the predictions 
+  forecast_basedon: 10m #Forecast based on past how many data points
+  write_back_metric: forecast_memory_usage #Where should it write back the metrics
+- name: windows_logical_disk_write_bytes_total
+  start_time: '2022-07-19T09:47:00.000Z'
+  end_time: '2022-07-19T09:48:00.000Z'
+  query: sum+by(instance)+(windows_logical_disk_write_bytes_total)
+  training_interval: 1h #amount of data should be used for training
+  forecast_duration: 5m #How data points should be predicted, here it will predict for 5 mins
+  forecast_every: 1m #At what interval the app do the predictions 
+  forecast_basedon: 10m #Forecast based on past how many data points
+  write_back_metric: forecast_memory_usage #Where should it write back the metrics
+
+ 
