@@ -24,11 +24,11 @@ def stan_init(m):
         res[pname] = m.params[pname][0]
     return res
 
-def fit_and_predict(df, periods=1000,frequency='60s',old_model_loc=None):
+def fit_and_predict(df, periods=1000,frequency='60s',old_model_loc=None,new_model_loc='./serialized_model.json'):
     response = {}
     old_model = None
     model = None
-    new_model_loc = './serialized_model.json'
+    new_model_loc = new_model_loc
     try:
         if old_model_loc != None:
             with open(old_model_loc, 'r') as fin:
@@ -40,9 +40,14 @@ def fit_and_predict(df, periods=1000,frequency='60s',old_model_loc=None):
         with open(new_model_loc, 'w') as fout:
             fout.write(model_to_json(model))  # Save model
         future_df = model.make_future_dataframe(periods=periods, freq=frequency)
+        fcst = model.predict(future_df)
+        fcst = fcst[-(periods):]
         response['status'] = 'success'
         response['model_location'] = new_model_loc
-        response['result_df'] = future_df[-(periods):]
+        response['yhat'] = fcst['yhat']
+        response['yhat_lower'] = fcst['yhat_lower']
+        response['yhat_upper'] = fcst['yhat_upper']
+        response['ds'] = fcst['ds']
     except Exception as e:
         print(e)
         response['status'] = 'failure'
