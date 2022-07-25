@@ -17,3 +17,7 @@
 forecast_experiments/sample data/*
 forecast_experiments/models/*
 
+forecast_experiments/serialized_model.json
+forecast_experiments/scripts/serialized_model.json
+
+**/__pycache__
