@@ -5,6 +5,7 @@ import json
 import datetime
 import asyncio
 import time
+import pytz
 from prometheus_pb2 import (
     TimeSeries,
     Label,
@@ -42,13 +43,64 @@ def get_data_from_prometheus(metric_name,prom_query, start_time, end_time, url):
     for elements in result:
         values = elements['values']
         for element in values:
-            date_time=datetime.datetime.fromtimestamp(element[0])
+            date_time=datetime.datetime.utcfromtimestamp(element[0])
+            print(date_time)
             data_time.append(date_time)
             data_value.append(element[1]) 
     data_points['Time'] = data_time
     data_points['y'] = data_value
     #print(data_points)
     return data_points
+
+def dt2ts(dt):
+    """Converts a datetime object to UTC timestamp
+    naive datetime will be considered UTC.
+    """
+    return calendar.timegm(dt.utctimetuple())
+
+async def write_to_prometheus(val,tim,write_name):
+
+    write_request = WriteRequest()
+
+    series = write_request.timeseries.add()
+
+    # name label always required
+    label = series.labels.add()
+    label.name = "__name__"
+    label.value = write_name
+    
+    # as many labels you like
+    # label = series.labels.add()
+    # label.name = "ssl_cipher"
+    # label.value = "some_value"
+
+    sample = series.samples.add()
+    sample.value = val # your count?
+    dtl = int(tim.timestamp())
+    # print(dtl)
+    # dtt = datetime.datetime.fromtimestamp(dtl)
+    # print(dtt)
+    sample.timestamp = dtl *1000
+    
+    print(sample.timestamp)
+    
+
+
+    uncompressed = write_request.SerializeToString()
+    compressed = snappy.compress(uncompressed)
+
+    url = "http://localhost:9000/api/v1/write"
+    headers = {
+        "Content-Encoding": "snappy",
+        "Content-Type": "application/x-protobuf",
+        "X-Prometheus-Remote-Write-Version": "0.1.0",
+        "User-Agent": "metrics-worker"
+    }
+    try:
+        response = requests.post(url, headers=headers, data=compressed)
+        print(response)
+    except Exception as e:
+        print(e)
 
 def stan_init(m):
     """Retrieve parameters from a trained model.
@@ -72,7 +124,7 @@ def stan_init(m):
         res[pname] = m.params[pname][0]
     return res
 
-async def fit_and_predict(metric_name,prom_query,start_time,end_time,url,periods=1000,frequency='60s',old_model_loc=None,new_model_loc='./serialized_model.json'):
+async def fit_and_predict(metric_name,prom_query,start_time,end_time,write_back_metric,url,periods=1000,frequency='60s',old_model_loc=None,new_model_loc='./serialized_model.json'):
     response = {}
     old_model = None
     # file_exists = exists('./'+metric_name+'.json')
@@ -108,54 +160,16 @@ async def fit_and_predict(metric_name,prom_query,start_time,end_time,url,periods
     except Exception as e:
         print(e)
         response['status'] = 'failure'
-    return(response)
-
-def dt2ts(dt):
-    """Converts a datetime object to UTC timestamp
-    naive datetime will be considered UTC.
-    """
-    return calendar.timegm(dt.utctimetuple())
-
-def write_to_prometheus(val,tim):
-
-    write_request = WriteRequest()
-
-    series = write_request.timeseries.add()
-
-    # name label always required
-    label = series.labels.add()
-    label.name = "__name__"
-    label.value = "custom_nameer"
-    
-    # as many labels you like
-    # label = series.labels.add()
-    # label.name = "ssl_cipher"
-    # label.value = "some_value"
-
-    sample = series.samples.add()
-    sample.value = val # your count?
-    sample.timestamp = int(tim.timestamp()) * 1000
-    print(sample.timestamp)
-    print(dt2ts(datetime.datetime.utcnow()) * 1000)
+    #print(response)
+    data_to_prom_val = response['yhat'].to_dict()
+    data_to_prom_tim = response['ds'].to_dict()
+    for elements in data_to_prom_val:
+        await write_to_prometheus(data_to_prom_val[elements],data_to_prom_tim[elements],write_back_metric)
+        await asyncio.sleep(1)
+    return response
     
 
 
-    uncompressed = write_request.SerializeToString()
-    compressed = snappy.compress(uncompressed)
-
-    url = "http://localhost:9000/api/v1/write"
-    headers = {
-        "Content-Encoding": "snappy",
-        "Content-Type": "application/x-protobuf",
-        "X-Prometheus-Remote-Write-Version": "0.1.0",
-        "User-Agent": "metrics-worker"
-    }
-    try:
-        response = requests.post(url, headers=headers, data=compressed)
-        print(response)
-    except Exception as e:
-        print(e)
-    
 
 async def call_to_all(metrics,data):
     metric_name = metrics['name']
@@ -163,26 +177,27 @@ async def call_to_all(metrics,data):
     end_time = metrics['end_time']
     url = data
     prom_query = metrics['query']
-    forecast_every = metrics['forecast_every']
+    write_back_metric = metrics['write_back_metric']
     
+
 
     for i in range(len(metric_name)):
         file_exists = exists('./'+metric_name[i]+'.json')
         old_model_loc=None
-        # if(file_exists):
-        #     old_model_loc = './'+metric_name[i]+'.json'
-        a=asyncio.gather(fit_and_predict(metric_name[i],prom_query[i],start_time[i],end_time[i],url,periods=1000,frequency='60s',old_model_loc=old_model_loc))
+        if(file_exists):
+            old_model_loc = './'+metric_name[i]+'.json'
+        a=asyncio.gather(fit_and_predict(metric_name[i],prom_query[i],start_time[i],end_time[i],write_back_metric[i],url,periods=50,frequency='60s',old_model_loc=old_model_loc))
         while not a.done():
             await asyncio.sleep(1)
-            try:
-                result = a.result()
-                #print(result[0]['ds'])
-            except asyncio.CancelledError:
-                print("Someone cancelled")
-            except Exception as e:
-                print(f"Some error: {e}")
-                await call_to_all()
-    return result
+        try:
+            ressult = a.result()
+            #print(result[0]['ds'])
+        except asyncio.CancelledError:
+            print("Someone cancelled")
+        except Exception as e:
+            print(f"Some error: {e}")
+            #await call_to_all(metrics,data)
+    #return result
 
 
 async def main():
@@ -199,17 +214,12 @@ async def main():
         for element in elements:
             metric_dict[element].append(elements[element])
     
-    
-    result1=await call_to_all(metric_dict,data['prometheus_url'])
-    data_to_prom_val = result1[0]['yhat'].to_dict()
-    data_to_prom_tim = result1[0]['ds'].to_dict()
-    for elements in data_to_prom_val:
-        await asyncio.sleep(15)
-        write_to_prometheus(data_to_prom_val[elements],data_to_prom_tim[elements])
+    await call_to_all(metric_dict,data['prometheus_url'])
+
         
     
-    while True:
-        #get status of the async functions and restart failed ones
-        pass
+    # while True:
+    #     #get status of the async functions and restart failed ones
+    #     pass
 
 asyncio.run(main())
