@@ -37,14 +37,14 @@ def get_data_from_prometheus(metric_name,prom_query, start_time, end_time, url):
     data_time = []
     data_value=[]
     
-    query = url+'/api/v1/query_range?query='+prom_query+'&start='+start_time+'&end='+end_time+'&step=30s'
+    query = url+'/api/v1/query_range?query='+prom_query+'&start='+str(start_time)+'&end='+str(end_time)+'&step=30s'
     #print(query)
     result = prometheus(query)
     for elements in result:
         values = elements['values']
         for element in values:
             date_time=datetime.datetime.utcfromtimestamp(element[0])
-            print(date_time)
+            #print(date_time)
             data_time.append(date_time)
             data_value.append(element[1]) 
     data_points['Time'] = data_time
@@ -58,7 +58,7 @@ def dt2ts(dt):
     """
     return calendar.timegm(dt.utctimetuple())
 
-async def write_to_prometheus(val,tim,write_name):
+def write_to_prometheus(val,tim,write_name):
 
     write_request = WriteRequest()
 
@@ -124,7 +124,7 @@ def stan_init(m):
         res[pname] = m.params[pname][0]
     return res
 
-async def fit_and_predict(metric_name,prom_query,start_time,end_time,write_back_metric,url,periods=1000,frequency='60s',old_model_loc=None,new_model_loc='./serialized_model.json'):
+async def fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_back_metric,periods=1000,frequency='60s',old_model_loc=None,new_model_loc='./serialized_model.json'):
     response = {}
     old_model = None
     # file_exists = exists('./'+metric_name+'.json')
@@ -164,39 +164,27 @@ async def fit_and_predict(metric_name,prom_query,start_time,end_time,write_back_
     data_to_prom_val = response['yhat'].to_dict()
     data_to_prom_tim = response['ds'].to_dict()
     for elements in data_to_prom_val:
-        await write_to_prometheus(data_to_prom_val[elements],data_to_prom_tim[elements],write_back_metric)
-        await asyncio.sleep(1)
+        write_to_prometheus(data_to_prom_val[elements],data_to_prom_tim[elements],write_back_metric)
+        #await asyncio.sleep(1)
     return response
     
 
 
 
-async def call_to_all(metrics,data):
-    metric_name = metrics['name']
-    start_time = metrics['start_time']
-    end_time = metrics['end_time']
-    url = data
-    prom_query = metrics['query']
-    write_back_metric = metrics['write_back_metric']
+async def call_to_all(metric_name,prom_query,start_time,end_time,write_back_metric,url):
     
-
-
-    for i in range(len(metric_name)):
-        file_exists = exists('./'+metric_name[i]+'.json')
-        old_model_loc=None
-        if(file_exists):
-            old_model_loc = './'+metric_name[i]+'.json'
-        a=asyncio.gather(fit_and_predict(metric_name[i],prom_query[i],start_time[i],end_time[i],write_back_metric[i],url,periods=50,frequency='60s',old_model_loc=old_model_loc))
-        while not a.done():
-            await asyncio.sleep(1)
-        try:
-            ressult = a.result()
-            #print(result[0]['ds'])
-        except asyncio.CancelledError:
-            print("Someone cancelled")
-        except Exception as e:
-            print(f"Some error: {e}")
-            #await call_to_all(metrics,data)
+    old_model_loc=None
+    a=asyncio.gather(fit_and_predict(metric_name,prom_query,start_time,end_time,write_back_metric,url,periods=50,frequency='60s',old_model_loc=old_model_loc))
+    while not a.done():
+        await asyncio.sleep(1)
+    try:
+        ressult = a.result()
+        #print(result[0]['ds'])
+    except asyncio.CancelledError:
+        print("Someone cancelled")
+    except Exception as e:
+        print(f"Some error: {e}")
+        #await call_to_all(metric_name,prom_query,start_time,end_time,write_back_metric,url)
     #return result
 
 
@@ -213,13 +201,53 @@ async def main():
     for elements in data['metrics']:
         for element in elements:
             metric_dict[element].append(elements[element])
-    
-    await call_to_all(metric_dict,data['prometheus_url'])
 
+    metric_name = metric_dict['name']
+    start_time = metric_dict['start_time']
+    end_time = metric_dict['end_time']
+    url = data['prometheus_url']
+    prom_query = metric_dict['query']
+    write_back_metric = metric_dict['write_back_metric']
+    forecast_every = metric_dict['forecast_every']
+    # for i in range(len(metric_name)):
+    #     await call_to_all(metric_name[i],prom_query[i],start_time[i],end_time[i],write_back_metric[i],url)
+    await running(metric_name,start_time,end_time,url,prom_query,write_back_metric,forecast_every)
         
+async def predict_every(metric_name,start_time,end_time,url,prom_query,write_back_metric,forecast_every):
+    n=0
+    while True:
+        if n>0:
+            print("2nd")
+            end_time = int(time.time())
+            start_time = end_time - (forecast_every*60)
+            await fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_back_metric,periods=forecast_every,frequency='60s',old_model_loc=None)
+        else:
+            print("og")
+            await fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_back_metric,periods=forecast_every,frequency='60s',old_model_loc=None)
+        n+=1
+        await asyncio.sleep((forecast_every*60))
+
+
+async def running(metric_name,start_time,end_time,url,prom_query,write_back_metric,forecast_every): 
+    while True:
+        #get status of the async functions and restart failed ones
+        async_params = []
+        for i in range(len(metric_name)):
+            async_params.append(predict_every(metric_name[i],start_time[i],end_time[i],url,prom_query[i],write_back_metric[i],forecast_every[i]))
+        async_params = tuple(async_params)
+        g = asyncio.gather(*async_params)
+        while not g.done():
+            await asyncio.sleep(1)
+        try:
+            result = g.result()
+        except asyncio.CancelledError:
+            print("Someone cancelled")
+            break
+        except Exception as e:
+            print(f"Some error: {e}")
+            break
+            
+    await running(metric_name,start_time,end_time,url,prom_query,write_back_metric,forecast_every)
     
-    # while True:
-    #     #get status of the async functions and restart failed ones
-    #     pass
 
 asyncio.run(main())
