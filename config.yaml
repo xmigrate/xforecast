@@ -1,24 +1,24 @@
-prometheus_url: http://localhost:9000
+prometheus_url: http://localhost:9090
 
 metrics:
-- name: windows_cpu_time_total  #metric name in prometheus
-  start_time: '2022-08-06T09:45:00.000Z'
-  end_time: '2022-08-06T09:51:00.000Z'
-  query: avg+by(instance)+(windows_cpu_time_total{mode="idle"})
+- name: node_cpu_time_total  #metric name in prometheus
+  start_time: '2022-08-08T12:38:00.000Z'
+  end_time: '2022-08-08T12:48:00.000Z'
+  query: sum+by(instance)+(irate(node_cpu_seconds_total{instance="node-exporter:9100"}[24h]))
   training_interval: 1h #amount of data should be used for training
   forecast_duration: 10m #How data points should be predicted, here it will predict for 5 mins
-  forecast_every: 60 #At what interval the app do the predictions 
+  forecast_every: 600 #At what interval the app do the predictions 
   forecast_basedon: 10m #Forecast based on past how many data points
   write_back_metric: forecast_cpu #Where should it write back the metrics
-- name: windows_os_physical_memory_free_bytes
-  start_time: '2022-08-06T09:45:00.000Z'
-  end_time: '2022-08-06T09:51:00.000Z'
-  query: sum+by(instance)+(windows_os_physical_memory_free_bytes)
-  training_interval: 1h #amount of data should be used for training
-  forecast_duration: 5m #How data points should be predicted, here it will predict for 5 mins
-  forecast_every: 60 #At what interval the app do the predictions 
-  forecast_basedon: 10m #Forecast based on past how many data points
-  write_back_metric: forecast_pmemory #Where should it write back the metrics
+# - name: windows_os_physical_memory_free_bytes
+#   start_time: '2022-08-08T04:20:00.000Z'
+#   end_time: '2022-08-08T04:27:00.000Z'
+#   query: sum+by(instance)+(windows_os_physical_memory_free_bytes)
+#   training_interval: 1h #amount of data should be used for training
+#   forecast_duration: 5m #How data points should be predicted, here it will predict for 5 mins
+#   forecast_every: 60 #At what interval the app do the predictions 
+#   forecast_basedon: 10m #Forecast based on past how many data points
+#   write_back_metric: forecast_pmemory #Where should it write back the metrics
 # - name: windows_logical_disk_free_bytes
 #   start_time: '2022-07-19T09:47:00.000Z'
 #   end_time: '2022-07-19T09:48:00.000Z'

@@ -5,7 +5,6 @@ import json
 import datetime
 import asyncio
 import time
-import pytz
 from prometheus_pb2 import (
     TimeSeries,
     Label,
@@ -22,7 +21,6 @@ import pandas as pd
 from prophet import Prophet
 from prophet.serialize import model_to_json, model_from_json
 from yaml.loader import SafeLoader
-from collections import defaultdict
 
 
 
@@ -89,7 +87,7 @@ def write_to_prometheus(val,tim,write_name):
     uncompressed = write_request.SerializeToString()
     compressed = snappy.compress(uncompressed)
 
-    url = "http://localhost:9000/api/v1/write"
+    url = "http://localhost:9090/api/v1/write"
     headers = {
         "Content-Encoding": "snappy",
         "Content-Type": "application/x-protobuf",
@@ -127,10 +125,9 @@ def stan_init(m):
 async def fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_back_metric,periods=1,frequency='60s',old_model_loc=None,new_model_loc='./serialized_model.json'):
     response = {}
     old_model = None
-    # file_exists = exists('./'+metric_name+'.json')
-    # if(file_exists):
-    #     old_model_loc = './'+metric_name+'.json'
+    
     model = None
+    
     new_model_loc = './'+metric_name+'.json'
     data_for_training = get_data_from_prometheus(metric_name,prom_query,start_time,end_time,url)
     df={}
@@ -144,12 +141,13 @@ async def fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_b
         if old_model_loc != None:
             with open(old_model_loc, 'r') as fin:
                 old_model = model_from_json(fin.read())  # Load model
-                print(type(old_model))
+                #print(type(old_model))
             model = Prophet(seasonality_mode='multiplicative').fit(df,init=stan_init(old_model))
         else:
             model = Prophet(seasonality_mode='multiplicative').fit(df)
-        with open(new_model_loc, 'w') as fout:
-            fout.write(model_to_json(model))  # Save model
+        if old_model_loc == None:
+            with open(new_model_loc, 'w') as fout:
+                fout.write(model_to_json(model))  # Save model
         future_df = model.make_future_dataframe(periods=periods, freq=frequency)
         fcst = model.predict(future_df)
         fcst = fcst[-(periods):]
@@ -163,11 +161,15 @@ async def fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_b
         print(e)
         response['status'] = 'failure'
     #print(response)
-    data_to_prom_val = response['yhat'].to_dict()
+    data_to_prom_yhatlower = response['yhat_lower'].to_dict()
+    data_to_prom_yhatupper = response['yhat_upper'].to_dict()
+    data_to_prom_yhat = response['yhat'].to_dict()
     data_to_prom_tim = response['ds'].to_dict()
-    for elements in data_to_prom_val:
-        write_to_prometheus(data_to_prom_val[elements],data_to_prom_tim[elements],write_back_metric)
-        #await asyncio.sleep(1)
+    for elements in data_to_prom_tim:
+        write_to_prometheus(data_to_prom_yhat[elements],data_to_prom_tim[elements],write_back_metric+'_yhat')
+        write_to_prometheus(data_to_prom_yhatlower[elements],data_to_prom_tim[elements],write_back_metric+'_yhat_lower')
+        write_to_prometheus(data_to_prom_yhatupper[elements],data_to_prom_tim[elements],write_back_metric+'_yhat_upper')
+    
     return response
     
 
@@ -197,10 +199,10 @@ async def predict_every(metric_name,start_time,end_time,url,prom_query,write_bac
             #print("2nd")
             end_time = int(time.time())
             start_time = end_time - (forecast_every)
-            await fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_back_metric,periods=1,frequency='60s',old_model_loc=old_model_loc)
+            await fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_back_metric,periods=10,frequency='60s',old_model_loc=old_model_loc)
         else:
             #print("og")
-            await fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_back_metric,periods=1,frequency='60s',old_model_loc=None)
+            await fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_back_metric,periods=10,frequency='60s',old_model_loc=None)
         n+=1
         await asyncio.sleep((forecast_every))
 
