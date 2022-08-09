@@ -5,7 +5,7 @@ import json
 import datetime
 import asyncio
 import time
-from prometheus_pb2 import (
+from packages.helper.prometheus_pb2 import (
     TimeSeries,
     Label,
     Labels,
@@ -128,7 +128,7 @@ async def fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_b
     
     model = None
     
-    new_model_loc = './'+metric_name+'.json'
+    new_model_loc = './packages/models/'+metric_name+'.json'
     data_for_training = get_data_from_prometheus(metric_name,prom_query,start_time,end_time,url)
     df={}
     df['Time'] =  pd.to_datetime(data_for_training['Time'], format='%d/%m/%y %H:%M:%S')
@@ -192,10 +192,10 @@ async def predict_every(metric_name,start_time,end_time,url,prom_query,write_bac
     n=0
     while True:
         periods=(forecast_every/60)
-        periods=int(periods)
-        file_exists = exists('./'+metric_name+'.json')
+        periods = int(periods)
+        file_exists = exists('./packages/models/'+metric_name+'.json')
         if(file_exists):
-            old_model_loc = './'+metric_name+'.json'
+            old_model_loc = './packages/models/'+metric_name+'.json'
         if n>0:
             #print("2nd")
             end_time = int(time.time())
@@ -226,6 +226,7 @@ async def forecast(metric_list,url):
         except Exception as e:
             print(f"Some error: {e}")
             break
+            
     await forecast(metric_list,url)
     
 
