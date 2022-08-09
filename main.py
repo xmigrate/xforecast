@@ -169,7 +169,6 @@ async def fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_b
         write_to_prometheus(data_to_prom_yhat[elements],data_to_prom_tim[elements],write_back_metric+'_yhat')
         write_to_prometheus(data_to_prom_yhatlower[elements],data_to_prom_tim[elements],write_back_metric+'_yhat_lower')
         write_to_prometheus(data_to_prom_yhatupper[elements],data_to_prom_tim[elements],write_back_metric+'_yhat_upper')
-    
     return response
     
 
@@ -192,6 +191,8 @@ async def main():
 async def predict_every(metric_name,start_time,end_time,url,prom_query,write_back_metric,forecast_every):
     n=0
     while True:
+        periods=(forecast_every/60)
+        periods=int(periods)
         file_exists = exists('./'+metric_name+'.json')
         if(file_exists):
             old_model_loc = './'+metric_name+'.json'
@@ -199,10 +200,10 @@ async def predict_every(metric_name,start_time,end_time,url,prom_query,write_bac
             #print("2nd")
             end_time = int(time.time())
             start_time = end_time - (forecast_every)
-            await fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_back_metric,periods=10,frequency='60s',old_model_loc=old_model_loc)
+            await fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_back_metric,periods=periods,frequency='60s',old_model_loc=old_model_loc)
         else:
             #print("og")
-            await fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_back_metric,periods=10,frequency='60s',old_model_loc=None)
+            await fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_back_metric,periods=periods,frequency='60s',old_model_loc=None)
         n+=1
         await asyncio.sleep((forecast_every))
 
@@ -225,7 +226,6 @@ async def forecast(metric_list,url):
         except Exception as e:
             print(f"Some error: {e}")
             break
-            
     await forecast(metric_list,url)
     
 
