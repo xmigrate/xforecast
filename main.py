@@ -5,7 +5,7 @@ import json
 import datetime
 import asyncio
 import time
-from packages.helper.prometheus_pb2 import (
+from packages.datasources.prometheus_pb2 import (
     TimeSeries,
     Label,
     Labels,
@@ -26,11 +26,38 @@ from yaml.loader import SafeLoader
 
 
 def prometheus(query):
+    """Gets data from prometheus using the http api.
+
+    Parameters
+    ----------
+    query: proemtheus query for the metric
+
+    Returns
+    -------
+    values: Result from prometheus
+    """
+
     result = json.loads(requests.get(query).text)
     value = result['data']['result']
     return value
 
-def get_data_from_prometheus(metric_name,prom_query, start_time, end_time, url):
+def get_data_from_prometheus(prom_query, start_time, end_time, url):
+    """Get the required data points by querying prometheus.
+
+    Parameters
+    ----------
+    prom_query: Prometheus query
+    start_time : start time for the prometheus query
+    end_time : end time for the prometheus query
+    url : Prometheus url
+
+    Returns
+    -------
+    data_points: A dictionary of lists containing time and values that are returned from prometheus
+    
+    """
+
+
     data_points = {}
     data_time = []
     data_value=[]
@@ -57,6 +84,15 @@ def dt2ts(dt):
     return calendar.timegm(dt.utctimetuple())
 
 def write_to_prometheus(val,tim,write_name):
+    """Write the predicted data to prometheus.
+    
+    Parameters
+    ----------
+    val: Value to be written
+    tim: Which time the value should be written
+    write_name: Custom metric name to be written
+
+    """
 
     write_request = WriteRequest()
 
@@ -123,13 +159,28 @@ def stan_init(m):
     return res
 
 async def fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_back_metric,periods=1,frequency='60s',old_model_loc=None,new_model_loc='./serialized_model.json'):
+    """Predicts the values according to the data points recieved 
+    
+    Parameters
+    ----------
+    metric_name : metric name in prometheus
+    start_time : start time for the prometheus query
+    end_time : end time for the prometheus query
+    url : Prometheus url
+    prom_query = Prometheus query
+    write_back_metric = name of the predicted/written metric
+    periods = no of data points predicted
+    frequency =  
+    old_model_location = location of the trained model
+    new_model_location = location where the newly trained model should be saved
+
+    """
+
     response = {}
     old_model = None
-    
     model = None
-    
     new_model_loc = './packages/models/'+metric_name+'.json'
-    data_for_training = get_data_from_prometheus(metric_name,prom_query,start_time,end_time,url)
+    data_for_training = get_data_from_prometheus(prom_query,start_time,end_time,url)
     df={}
     df['Time'] =  pd.to_datetime(data_for_training['Time'], format='%d/%m/%y %H:%M:%S')
     df['ds'] = df['Time']
@@ -169,15 +220,13 @@ async def fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_b
         write_to_prometheus(data_to_prom_yhat[elements],data_to_prom_tim[elements],write_back_metric+'_yhat')
         write_to_prometheus(data_to_prom_yhatlower[elements],data_to_prom_tim[elements],write_back_metric+'_yhat_lower')
         write_to_prometheus(data_to_prom_yhatupper[elements],data_to_prom_tim[elements],write_back_metric+'_yhat_upper')
-    return response
     
 
 
 async def main():
-    #TODO read the config file and assign to the variables
-    #Check datastore type, if prometheus get it from get_data_from_promethues(metric_name, start_time, end_time, url)
-    #Check if there's a trained model available for the given metric, else do the training also check the retrain flag in the config of each metric
-    #Give predictions back to the prometheus if trained model is available locally
+    """Reads the configuration file and creates a metric list"""
+
+
     with open('./config.yaml') as f:
         data = yaml.load(f, Loader=SafeLoader)
     #print(data)
@@ -188,7 +237,21 @@ async def main():
     url =data['prometheus_url']
     await forecast(metric_list,url)
         
-async def predict_every(metric_name,start_time,end_time,url,prom_query,write_back_metric,forecast_every):
+async def predict_every(metric_name,start_time,end_time,url,prom_query,write_back_metric,forecast_every,forecast_basedon):
+    """Calls fit_and_predict function at the required intervals
+
+    Parameters
+    ----------
+    metric_name : metric name in prometheus
+    start_time : start time for the prometheus query
+    end_time : end time for the prometheus query
+    url : Prometheus url
+    prom_query = Prometheus query
+    write_back_metric = name of the predicted/written metric
+    forecast_every: At what interval the app do the predictions
+    forecast_basedon: Forecast based on past how many data points
+    
+    """
     n=0
     while True:
         periods=(forecast_every/60)
@@ -199,7 +262,7 @@ async def predict_every(metric_name,start_time,end_time,url,prom_query,write_bac
         if n>0:
             #print("2nd")
             end_time = int(time.time())
-            start_time = end_time - (forecast_every)
+            start_time = end_time - (forecast_basedon)
             await fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_back_metric,periods=periods,frequency='60s',old_model_loc=old_model_loc)
         else:
             #print("og")
@@ -209,11 +272,20 @@ async def predict_every(metric_name,start_time,end_time,url,prom_query,write_bac
 
 
 async def forecast(metric_list,url): 
+    """Creates a tuple of functions and calls them using asyncio.gather. 
+    calls recursively if there is an exception.
+
+    parameters
+    ----------
+    metric_list: A list of dictionaries containing metric details.
+    url : Prometheus Url.
+
+    """
     while True:
         #get status of the async functions and restart failed ones
         async_params = []
         for metric in metric_list:
-            async_params.append(predict_every(metric['name'],metric['start_time'],metric['end_time'],url,metric['query'],metric['write_back_metric'],metric['forecast_every']))
+            async_params.append(predict_every(metric['name'],metric['start_time'],metric['end_time'],url,metric['query'],metric['write_back_metric'],metric['forecast_every'],metric['forecast_basedon']))
         async_params = tuple(async_params)
         g = asyncio.gather(*async_params)
         while not g.done():
@@ -226,7 +298,7 @@ async def forecast(metric_list,url):
         except Exception as e:
             print(f"Some error: {e}")
             break
-            
+         
     await forecast(metric_list,url)
     
 

@@ -2,21 +2,21 @@ prometheus_url: http://localhost:9090
 
 metrics:
 - name: mem_used_by_user_apps  #metric name in prometheus
-  start_time: '2022-08-09T09:27:00.000Z'
-  end_time: '2022-08-09T09:37:00.000Z'
+  start_time: '2022-08-10T11:07:00.000Z'
+  end_time: '2022-08-10T11:17:00.000Z'
   query: node_memory_MemTotal_bytes{instance="node-exporter:9100"} - node_memory_MemFree_bytes{instance="node-exporter:9100"} - node_memory_Buffers_bytes{instance="node-exporter:9100"} - node_memory_Cached_bytes{instance="node-exporter:9100"} - node_memory_Slab_bytes{instance="node-exporter:9100"} - node_memory_PageTables_bytes{instance="node-exporter:9100"} - node_memory_SwapCached_bytes{instance="node-exporter:9100"}
   training_interval: 1h #amount of data should be used for training
   forecast_duration: 10m #How data points should be predicted, here it will predict for 5 mins
-  forecast_every: 600 #At what interval the app do the predictions 
-  forecast_basedon: 10m #Forecast based on past how many data points
+  forecast_every: 120 #At what interval the app do the predictions 
+  forecast_basedon: 600 #Forecast based on past how many data points
   write_back_metric: forecast_mem_used_by_user_apps #Where should it write back the metrics
 - name: memory_usage  #metric name in prometheus
-  start_time: '2022-08-09T09:27:00.000Z'
-  end_time: '2022-08-09T09:37:00.000Z'
+  start_time: '2022-08-10T11:07:00.000Z'
+  end_time: '2022-08-10T11:17:00.000Z'
   query: 100 - ((node_memory_MemAvailable_bytes{instance="node-exporter:9100"} * 100) / node_memory_MemTotal_bytes{instance="node-exporter:9100"})
   training_interval: 1h #amount of data should be used for training
   forecast_duration: 10m #How data points should be predicted, here it will predict for 5 mins
-  forecast_every: 600 #At what interval the app do the predictions 
-  forecast_basedon: 10m #Forecast based on past how many data points
+  forecast_every: 120 #At what interval the app do the predictions 
+  forecast_basedon: 600 #Forecast based on past how many data points
   write_back_metric: forecast_mem_usage #Where should it write back the metrics
  
