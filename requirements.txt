@@ -1,4 +1,5 @@
-snappy
+python-snappy
+pytest
 pandas
 pystan
 prophet==1.0.1

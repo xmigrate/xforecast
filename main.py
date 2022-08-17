@@ -1,10 +1,10 @@
-#TODO import necessary packages
 import yaml
 import requests
 import json
 import datetime
 import asyncio
 import time
+
 from packages.datasources.prometheus_pb2 import (
     TimeSeries,
     Label,
@@ -13,9 +13,9 @@ from packages.datasources.prometheus_pb2 import (
     WriteRequest
 )
 import calendar
-import logging
 import requests
 import snappy
+from packages.datasources.logger import *
 from os.path import exists
 import pandas as pd
 from prophet import Prophet
@@ -39,6 +39,11 @@ def prometheus(query):
 
     result = json.loads(requests.get(query).text)
     value = result['data']['result']
+    status=result['status']
+    if value:
+        logger("Fetching data from prometheus - Succes","warning")
+    else:
+        logger("Fetching data from prometheus - Failed","warning")
     return value
 
 def get_data_from_prometheus(prom_query, start_time, end_time, url):
@@ -57,12 +62,12 @@ def get_data_from_prometheus(prom_query, start_time, end_time, url):
     
     """
 
-
+    logger("Fetching data from prometheus","warning")
     data_points = {}
     data_time = []
     data_value=[]
     
-    query = url+'/api/v1/query_range?query='+prom_query+'&start='+str(start_time)+'&end='+str(end_time)+'&step=30s'
+    query = url+'/api/v1/query_range?query='+prom_query+'&start='+str(start_time)+'&end='+str(end_time)+'&step=15s'
     #print(query)
     result = prometheus(query)
     for elements in result:
@@ -93,7 +98,7 @@ def write_to_prometheus(val,tim,write_name):
     write_name: Custom metric name to be written
 
     """
-
+    logger("Writing data to prometheus","warning")
     write_request = WriteRequest()
 
     series = write_request.timeseries.add()
@@ -133,8 +138,10 @@ def write_to_prometheus(val,tim,write_name):
     try:
         response = requests.post(url, headers=headers, data=compressed)
         print(response)
+        logger(response,"warning")
     except Exception as e:
         print(e)
+        logger(str(e),"error")
 
 def stan_init(m):
     """Retrieve parameters from a trained model.
@@ -189,19 +196,23 @@ async def fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_b
     #print(df.shape)
     #print(df.head())
     try:
+        
         if old_model_loc != None:
             with open(old_model_loc, 'r') as fin:
                 old_model = model_from_json(fin.read())  # Load model
                 #print(type(old_model))
-            model = Prophet(seasonality_mode='multiplicative').fit(df,init=stan_init(old_model))
+            logger("Retraining ML model","warning")
+            model = Prophet(seasonality_mode='multiplicative', daily_seasonality=True,yearly_seasonality=True, weekly_seasonality=True).fit(df,init=stan_init(old_model))
         else:
-            model = Prophet(seasonality_mode='multiplicative').fit(df)
-        if old_model_loc == None:
-            with open(new_model_loc, 'w') as fout:
-                fout.write(model_to_json(model))  # Save model
+            logger("Training ML model","warning")
+            model = Prophet(seasonality_mode='multiplicative',daily_seasonality=True,yearly_seasonality=True, weekly_seasonality=True).fit(df)
+        #if old_model_loc == None:
+        with open(new_model_loc, 'w') as fout:
+            fout.write(model_to_json(model))  # Save model
         future_df = model.make_future_dataframe(periods=periods, freq=frequency)
         fcst = model.predict(future_df)
         fcst = fcst[-(periods):]
+        logger("Predicting future data points","warning")
         response['status'] = 'success'
         response['model_location'] = new_model_loc
         response['yhat'] = fcst['yhat']
@@ -211,6 +222,7 @@ async def fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_b
     except Exception as e:
         print(e)
         response['status'] = 'failure'
+        logger(str(e),"error")
     #print(response)
     data_to_prom_yhatlower = response['yhat_lower'].to_dict()
     data_to_prom_yhatupper = response['yhat_upper'].to_dict()
@@ -230,6 +242,7 @@ async def main():
     with open('./config.yaml') as f:
         data = yaml.load(f, Loader=SafeLoader)
     #print(data)
+    logger("Reading configuration","warning")
 
     metric_list = []
     for metric in data['metrics']:
@@ -256,6 +269,7 @@ async def predict_every(metric_name,start_time,end_time,url,prom_query,write_bac
     while True:
         periods=(forecast_every/60)
         periods = int(periods)
+        print(periods)
         file_exists = exists('./packages/models/'+metric_name+'.json')
         if(file_exists):
             old_model_loc = './packages/models/'+metric_name+'.json'
@@ -294,9 +308,12 @@ async def forecast(metric_list,url):
             result = g.result()
         except asyncio.CancelledError:
             print("Someone cancelled")
+            msg="Someone cancelled"
+            logger(str(msg),"warning")
             break
         except Exception as e:
             print(f"Some error: {e}")
+            logger("Some error"+str(e),"error")
             break
          
     await forecast(metric_list,url)
