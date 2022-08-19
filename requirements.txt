@@ -3,3 +3,7 @@ pytest
 pandas
 pystan
 prophet==1.0.1
+pyyaml
+requests
+datetime
+protobuf==3.20.0

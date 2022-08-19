@@ -4,7 +4,6 @@ import json
 import datetime
 import asyncio
 import time
-
 from packages.datasources.prometheus_pb2 import (
     TimeSeries,
     Label,
@@ -13,7 +12,6 @@ from packages.datasources.prometheus_pb2 import (
     WriteRequest
 )
 import calendar
-import requests
 import snappy
 from packages.datasources.logger import *
 from os.path import exists
@@ -88,7 +86,7 @@ def dt2ts(dt):
     """
     return calendar.timegm(dt.utctimetuple())
 
-def write_to_prometheus(val,tim,write_name):
+def write_to_prometheus(val,tim,write_name,prom_url):
     """Write the predicted data to prometheus.
     
     Parameters
@@ -128,7 +126,7 @@ def write_to_prometheus(val,tim,write_name):
     uncompressed = write_request.SerializeToString()
     compressed = snappy.compress(uncompressed)
 
-    url = "http://localhost:9090/api/v1/write"
+    url = prom_url+"/api/v1/write"
     headers = {
         "Content-Encoding": "snappy",
         "Content-Type": "application/x-protobuf",
@@ -200,12 +198,12 @@ async def fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_b
         if old_model_loc != None:
             with open(old_model_loc, 'r') as fin:
                 old_model = model_from_json(fin.read())  # Load model
-                #print(type(old_model))
+                
             logger("Retraining ML model","warning")
-            model = Prophet(seasonality_mode='multiplicative', daily_seasonality=True,yearly_seasonality=True, weekly_seasonality=True).fit(df,init=stan_init(old_model))
+            model = Prophet(seasonality_mode='multiplicative').fit(df,init=stan_init(old_model))
         else:
             logger("Training ML model","warning")
-            model = Prophet(seasonality_mode='multiplicative',daily_seasonality=True,yearly_seasonality=True, weekly_seasonality=True).fit(df)
+            model = Prophet(seasonality_mode='multiplicative').fit(df)
         #if old_model_loc == None:
         with open(new_model_loc, 'w') as fout:
             fout.write(model_to_json(model))  # Save model
@@ -229,9 +227,9 @@ async def fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_b
     data_to_prom_yhat = response['yhat'].to_dict()
     data_to_prom_tim = response['ds'].to_dict()
     for elements in data_to_prom_tim:
-        write_to_prometheus(data_to_prom_yhat[elements],data_to_prom_tim[elements],write_back_metric+'_yhat')
-        write_to_prometheus(data_to_prom_yhatlower[elements],data_to_prom_tim[elements],write_back_metric+'_yhat_lower')
-        write_to_prometheus(data_to_prom_yhatupper[elements],data_to_prom_tim[elements],write_back_metric+'_yhat_upper')
+        write_to_prometheus(data_to_prom_yhat[elements],data_to_prom_tim[elements],write_back_metric+'_yhat',url)
+        write_to_prometheus(data_to_prom_yhatlower[elements],data_to_prom_tim[elements],write_back_metric+'_yhat_lower',url)
+        write_to_prometheus(data_to_prom_yhatupper[elements],data_to_prom_tim[elements],write_back_metric+'_yhat_upper',url)
     
 
 
