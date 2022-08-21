@@ -1,30 +1,44 @@
-# kube-forecast
+# xforecast
 
 ## Overview
-Kubeforecast helps to predict the data points for a given time period of a metric. It learns from the past data points of that metric.
-We will be using pre-trained models for this purpose.
+xforecast is realtime predictive tool which could be used for short term data predictions. 
+xforecast can be easily configured to learn multiple data streams for shorter time period(less than 24 hrs) and predict the data points in future.
 
-## Architecture
+## How it works?
+xforecast is an application written in Python. It can be run in a container and connect to your timeseries database to read the data points and write back the predicted data points. Currently xforecast only supports prometheus database.
 
-![Alt text](images/forecaster.PNG?raw=true "Architecture diagram of kube-forecast")
+## How to run?
+You can start the application in 2 ways, either from source code or with docker and docker-compose. Running xforecast is easier with docker to get you started.
+First we need to edit the configuration. Below is a sample config which predict `mem_usage` of linux server.
 
-Kubeforecast has the following components,
+```
+prometheus_url: http://<prometheus_url:port>
 
-- Datastore
-- Visualizer
-- Forecaster
+metrics:
+ - name: memory_usage  #metric name
+   start_time: '2022-08-17T09:23:00.000Z' #start time for the training data
+   end_time: '2022-08-17T09:33:00.000Z' #end time for the training data
+   query: 100 - ((node_memory_MemAvailable_bytes{instance="node-exporter:9100"} * 100) / node_memory_MemTotal_bytes{instance="node-exporter:9100"}) #query as in prometheus
+   training_interval: 1h #amount of data should be used for training
+   forecast_duration: 10m #How data points should be predicted, here it will predict for 5 mins
+   forecast_every: 120 #At what interval the app do the predictions 
+   forecast_basedon: 600 #Forecast based on past how many data points
+   write_back_metric: forecast_mem_usage #Where should it write back the metrics
 
-### Datastore
-We will be using prometheus as the supported datastore initially since the majority of the engineers uses this tool for collecting metrics from k8s cluster. Datastore will be used to query the datapoints of the metrics to be predicted by the forecaster. Datastore will be used by the forecaster to write the forecasted data points of that metrics.
+```
 
-### Visualizer
-We use Grafana to plot the graph against the actual data points and forecasted data points of the metrics. This can be the same grafana that the engineers already have. Grafana can be used to set alerts to remediate the issue proactively with automated or manual means.
+Once you have created the above configuration file, you can start the forecaster by running
 
-### Forecaster
-Forecaster is an always-running application written Python. It reads the configurations such as the datastore url, metric name, training data hrs etc. from the config file. This config can be loaded as a configmap. Once the training is completed, it will start predicting the data points for x period in every y mins. Here x and y are loaded from the configuration. the predicted data points will be written back to the datastore.
+```
+docker-compose up -d
+```
 
-#### ML Model
-We need to consider models which can be trained with multi-dimensional data(multiple metrics)
+As a next step you can create dashboards in grafana or your favourite visualisation tool. The predicted datapoints of the metrics can be found at the vaule of `write_back_metric` configuration.
 
+If you have multiple metrics to forecast, then you can append the details of those metrics to the configuration.
 
-
+## Feature Roadmap
+- Support for influxdb
+- Support for multiple forecasting ML models
+- Support for auto-ml to automatically decide right model for each metric
+- Web dashboard to create the metric predictions and monitor the prediction accuracy and it's health
