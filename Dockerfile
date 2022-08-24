@@ -8,7 +8,7 @@ RUN python3.7 -m pip install  -r ./requirements.txt
 
 COPY . .
 
-CMD ["python3.7","./main.py"]
+ENTRYPOINT ["python3.7","./main.py"]
 
 
 
