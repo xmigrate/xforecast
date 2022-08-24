@@ -1,0 +1,10 @@
+version: '3.2'
+
+services:
+  forecaster:
+    build: .
+    ports:
+      - "9100:9100"
+    volumes:
+      - ${PWD}/config.yaml:/config.yaml
+

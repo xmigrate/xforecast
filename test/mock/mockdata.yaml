@@ -1,0 +1,2 @@
+- result: [{"metric":{"__name__":"windows_os_physical_memory_free_bytes","instance":"192.168.1.9:9182","job":"wmi exporter"},"values":[[1659950820,"742436864"],[1659950835,"742436864"],[1659950850,"368250880"],[1659950865,"368250880"],[1659950880,"284823552"]]}]
+- result: {'Time': [datetime.datetime(2022, 8, 8, 9, 27), datetime.datetime(2022, 8, 8, 9, 27, 15), datetime.datetime(2022, 8, 8, 9, 27, 30), datetime.datetime(2022, 8, 8, 9, 27, 45), datetime.datetime(2022, 8, 8, 9, 28)], 'y': ['742436864', '742436864', '368250880', '368250880', '284823552']}

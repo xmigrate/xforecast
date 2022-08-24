@@ -10,6 +10,9 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+*.log
+*.pyc
+kube-forecast/packages/models/*.json
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
