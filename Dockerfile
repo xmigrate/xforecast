@@ -1,10 +1,6 @@
-FROM python:3.7
+FROM xmigrate/base:xforecast
 
 WORKDIR .
-
-COPY ./requirements.txt ./requirements.txt
-
-RUN python3.7 -m pip install  -r ./requirements.txt
 
 COPY . .
 
