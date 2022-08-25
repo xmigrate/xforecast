@@ -12,6 +12,9 @@
 *.out
 *.log
 *.pyc
+*.cache
+__pycache__
+
 kube-forecast/packages/models/*.json
 
 # Dependency directories (remove the comment below to include it)
