@@ -56,14 +56,14 @@ metrics:
 #   forecast_basedon: 600 #Forecast based on past how many data points
 #   write_back_metric: forecast_memory_usage #Where should it write back the metrics
 - name: windows_cpu_time_total  #metric name in prometheus
-  start_time: '2022-08-08T09:57:00.000Z'
-  end_time: '2022-08-08T09:58:00.000Z'
+  start_time: '2022-08-25T06:29:00.000Z'
+  end_time: '2022-08-25T06:30:00.000Z'
   query: avg+by(instance)+(windows_cpu_time_total{mode="idle"})
   training_interval: 1h #amount of data should be used for training
   forecast_duration: 5m #How data points should be predicted, here it will predict for 5 mins
   forecast_every: 60 #At what interval the app do the predictions 
   forecast_basedon: 60 #Forecast based on past how many data points
-  write_back_metric: forecast_cpu_time #Where should it write back the metrics
+  write_back_metric: forecast_cpu_time_new #Where should it write back the metrics
 
 
 
