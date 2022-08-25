@@ -1,6 +1,6 @@
 FROM xmigrate/base:xforecast
 
-WORKDIR .
+WORKDIR /app/workspace
 
 RUN apk add snappy
 
