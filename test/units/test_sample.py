@@ -8,7 +8,8 @@ from prometheus_pb2 import (
     Sample,
     WriteRequest
 )
-
+with open('test/mock/mockdata.yaml') as f:
+    data = yaml.load(f, Loader=SafeLoader)
 def prometheus(query):
     """Gets data from prometheus using the http api.
 
@@ -20,7 +21,7 @@ def prometheus(query):
     -------
     values: Result from prometheus
     """
-
+    assert query == "http://localhost:9000/api/v1/query_range?query=windows_os_physical_memory_free_bytes&start=2022-08-08T09:27:00.000Z&end=2022-08-08T09:28:00.000Z&step=15s"
     result = json.loads(requests.get(query).text)
     value = result['data']['result']
     status=result['status']
@@ -50,10 +51,10 @@ def get_data_from_prometheus(prom_query, start_time, end_time, url):
     data_points = {}
     data_time = []
     data_value=[]
-    
+    assert url =="http://localhost:9000"
     query = url+'/api/v1/query_range?query='+prom_query+'&start='+str(start_time)+'&end='+str(end_time)+'&step=15s'
     #print(query)
-    result = prometheus(query)
+    result = data[0]['result']
     for elements in result:
         values = elements['values']
         for element in values:
@@ -64,6 +65,7 @@ def get_data_from_prometheus(prom_query, start_time, end_time, url):
     data_points['Time'] = data_time
     data_points['y'] = data_value
     print(data_points)
+    #assert data_points == data[1]['result']
     return data_points
 
 def dt2ts(dt):
@@ -104,30 +106,13 @@ def write_to_prometheus(val,tim,write_name):
     # dtt = datetime.datetime.fromtimestamp(dtl)
     # print(dtt)
     sample.timestamp = tim *1000
+
+    assert sample.timestamp == 1660887343000
     
     print(sample.timestamp)
     
 
-
-    uncompressed = write_request.SerializeToString()
-    compressed = snappy.compress(uncompressed)
-
-    url = "http://localhost:9090/api/v1/write"
-    headers = {
-        "Content-Encoding": "snappy",
-        "Content-Type": "application/x-protobuf",
-        "X-Prometheus-Remote-Write-Version": "0.1.0",
-        "User-Agent": "metrics-worker"
-    }
-    try:
-        response = requests.post(url, headers=headers, data=compressed)
-        print(response)
-        assert str(response) == 'Response [204]'
-        # logger(response,"warning")
-    except Exception as e:
-        print(e)
-        # logger(str(e),"error")
-
+    
 def stan_init(m):
     """Retrieve parameters from a trained model.
 
@@ -150,13 +135,11 @@ def stan_init(m):
         res[pname] = m.params[pname][0]
     return res
 
-with open('../mock/mockdata.yaml') as f:
-    data = yaml.load(f, Loader=SafeLoader)
+
 
 
 def test_answer():
     query = "http://localhost:9000/api/v1/query_range?query=windows_os_physical_memory_free_bytes&start=2022-08-08T09:27:00.000Z&end=2022-08-08T09:28:00.000Z&step=15s"
-    assert prometheus(query) == data[0]["result"]
 def test_get_data():
     prom_query = "windows_os_physical_memory_free_bytes"
     start = '2022-08-08T09:27:00.000Z'

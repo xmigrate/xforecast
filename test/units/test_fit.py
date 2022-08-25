@@ -1,68 +1,14 @@
 from os.path import exists
 import pandas as pd
 import pytest,json,datetime,requests
+import yaml
+from yaml.loader import SafeLoader
 from prophet import Prophet
 from prophet.serialize import model_to_json, model_from_json
 #from test_sample import get_data_from_prometheus
 
-
-
-def prometheus(query):
-    """Gets data from prometheus using the http api.
-
-    Parameters
-    ----------
-    query: proemtheus query for the metric
-
-    Returns
-    -------
-    values: Result from prometheus
-    """
-
-    result = json.loads(requests.get(query).text)
-    value = result['data']['result']
-    status=result['status']
-    # if value:
-    #     logger("Fetching data from prometheus - Succes","warning")
-    # else:
-    #     logger("Fetching data from prometheus - Failed","warning")
-    return value
-
-def get_data_from_prometheus(prom_query, start_time, end_time, url):
-    """Get the required data points by querying prometheus.
-
-    Parameters
-    ----------
-    prom_query: Prometheus query
-    start_time : start time for the prometheus query
-    end_time : end time for the prometheus query
-    url : Prometheus url
-
-    Returns
-    -------
-    data_points: A dictionary of lists containing time and values that are returned from prometheus
-    
-    """
-
-    #logger("Fetching data from prometheus","warning")
-    data_points = {}
-    data_time = []
-    data_value=[]
-    
-    query = url+'/api/v1/query_range?query='+prom_query+'&start='+str(start_time)+'&end='+str(end_time)+'&step=15s'
-    #print(query)
-    result = prometheus(query)
-    for elements in result:
-        values = elements['values']
-        for element in values:
-            date_time=datetime.datetime.utcfromtimestamp(element[0])
-            #print(date_time)
-            data_time.append(date_time)
-            data_value.append(element[1]) 
-    data_points['Time'] = data_time
-    data_points['y'] = data_value
-    print(data_points)
-    return data_points
+with open('test/mock/data.yml') as f:
+    data = yaml.load(f, Loader=SafeLoader)
 
 def stan_init(m):
     """Retrieve parameters from a trained model.
@@ -107,10 +53,10 @@ async def fit_and_predict(metric_name,start_time,end_time,url,prom_query,periods
     response = {}
     old_model = None
     model = None
-    new_model_loc = './'+metric_name+'.json'
+    new_model_loc = './test/units/'+metric_name+'.json'
     
     url="http://localhost:9000"
-    data_for_training = get_data_from_prometheus(prom_query,start_time,end_time,url)
+    data_for_training = data
     df={}
     df['Time'] =  pd.to_datetime(data_for_training['Time'], format='%d/%m/%y %H:%M:%S')
     df['ds'] = df['Time']
@@ -123,11 +69,9 @@ async def fit_and_predict(metric_name,start_time,end_time,url,prom_query,periods
         if old_model_loc != None:
             with open(old_model_loc, 'r') as fin:
                 old_model = model_from_json(fin.read())  # Load model
-                #print(type(old_model))
-            # logger("Retraining ML model","warning")
+
             model = Prophet(seasonality_mode='multiplicative', daily_seasonality=True,yearly_seasonality=True, weekly_seasonality=True).fit(df,init=stan_init(old_model))
         else:
-            # logger("Training ML model","warning")
             model = Prophet(seasonality_mode='multiplicative',daily_seasonality=True,yearly_seasonality=True, weekly_seasonality=True).fit(df)
         #if old_model_loc == None:
         with open(new_model_loc, 'w') as fout:
@@ -135,7 +79,7 @@ async def fit_and_predict(metric_name,start_time,end_time,url,prom_query,periods
         future_df = model.make_future_dataframe(periods=periods, freq=frequency)
         fcst = model.predict(future_df)
         fcst = fcst[-(periods):]
-        # logger("Predicting future data points","warning")
+
         response['status'] = 'success'
         response['model_location'] = new_model_loc
         response['yhat'] = fcst['yhat']

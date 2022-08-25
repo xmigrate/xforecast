@@ -6,7 +6,7 @@ async def test_main():
     """Reads the configuration file and creates a metric list"""
 
 
-    with open('../../configwindows.yaml') as f:
+    with open('./config.yaml') as f:
         data = yaml.load(f, Loader=SafeLoader)
     #print(data)
     #logger("Reading configuration","warning")
@@ -16,7 +16,7 @@ async def test_main():
         metric_list.append(metric)
     url =data['prometheus_url']
     #await forecast(metric_list,url)
-    assert 'http://localhost:9000' in url
+    assert 'http://host.docker.internal:9000' in url
 
 
 
