@@ -13,7 +13,7 @@
 *.log
 *.pyc
 *.cache
-__pycache__
+__pycache__/
 
 kube-forecast/packages/models/*.json
 
