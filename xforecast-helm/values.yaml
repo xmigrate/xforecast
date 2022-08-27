@@ -1,0 +1,75 @@
+# Default values for xforecast-helm.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: docker.io/xmigrate/xforecast
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: 
+  capabilities:
+    drop:
+    - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000700001
+
+config: |
+  prometheus_url: http://prometheus:9000
+  metrics:  
+  - name: windows_cpu_time_total  #metric name in prometheus
+    start_time: '2022-08-25T06:29:00.000Z'
+    end_time: '2022-08-25T06:30:00.000Z'
+    query: avg+by(instance)+(windows_cpu_time_total{mode="idle"})
+    training_interval: 1h #amount of data should be used for training
+    forecast_duration: 5m #How data points should be predicted, here it will predict for 5 mins
+    forecast_every: 60 #At what interval the app do the predictions 
+    forecast_basedon: 60 #Forecast based on past how many data points
+    write_back_metric: forecast_cpu_time_new #Where should it write back the metrics
+
+
+service:
+  enabled: false
+  type: ClusterIP
+  port: 80
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
