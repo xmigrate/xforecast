@@ -1,4 +1,22 @@
-# xforecast
+<p align="center">
+  <a href="https://xforecast.readthedocs.io/en/latest/"><img src="./images/xforecast.PNG" alt="xforecast"></a>
+</p>
+<p align="center">
+    <em>Xforecast, a light weight realtime plug and play tool for predictive analytics</em>
+</p>
+<p align="center">
+<a href="https://github.com/xmigrate/xforecast/actions/workflows/test.yml" target="_blank">
+    <img src="https://github.com/xmigrate/xforecast/actions/workflows/test.yml/badge.svg" alt="Test">
+</a>
+<a href="https://codecov.io/gh/xmigrate/xforecast" target="_blank">
+    <img src="https://codecov.io/gh/xmigrate/xforecast/branch/main/graph/badge.svg?token=R3M0MPSVRT" alt="Coverage">
+</a>
+<a href="https://github.com/xmigrate/xforecast/actions/workflows/main.yml" target="_blank">
+    <img src="https://github.com/xmigrate/xforecast/actions/workflows/main.yml/badge.svg?branch=main" alt="Build">
+</a>
+</p>
+
+---
 
 ## Overview
 xforecast is realtime predictive tool which could be used for short term data predictions. 
