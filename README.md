@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://xforecast.readthedocs.io/en/latest/"><img src="./images/xforecast.PNG" alt="xforecast"></a>
+  <a href="https://xforecast.readthedocs.io/en/latest/"><img src="./images/xforecast.png" alt="xforecast" width=60%></a>
 </p>
 <p align="center">
     <em>Xforecast, a light weight realtime plug and play tool for predictive analytics</em>
