@@ -13,7 +13,6 @@ datasources:
   user: admin
   password: admin
   url: http://influxdb:8086
-  isDefault: true
   editable: true
 - name: Prometheus
   type: prometheus
@@ -27,7 +26,6 @@ datasources:
   basicAuthUser:
   basicAuthPassword:
   withCredentials:
-  isDefault: true
   jsonData:
      graphiteVersion: "1.1"
      tlsAuth: false
