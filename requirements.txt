@@ -1,9 +1,11 @@
 python-snappy
 pytest
-pandas
-pystan
+numpy==1.21.6
+matplotlib==3.5.3
+pandas==1.3.5
+pystan==2.19.1.1
 prophet==1.0.1
 pyyaml
-requests
+requests==2.28.1
 datetime
 protobuf==3.20.0
