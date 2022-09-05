@@ -1,4 +1,4 @@
-prometheus_url: http://host.docker.internal:9000
+prometheus_url: http://localhost:9000
 
 metrics:
 # - name: memory_usage  #metric name in prometheus
@@ -56,8 +56,8 @@ metrics:
 #   forecast_basedon: 600 #Forecast based on past how many data points
 #   write_back_metric: forecast_memory_usage #Where should it write back the metrics
 - name: windows_cpu_time_total  #metric name in prometheus
-  start_time: '2022-08-25T06:29:00.000Z'
-  end_time: '2022-08-25T06:30:00.000Z'
+  start_time: '2022-09-05T06:23:00.000Z'
+  end_time: '2022-09-05T06:24:00.000Z'
   query: avg+by(instance)+(windows_cpu_time_total{mode="idle"})
   training_interval: 1h #amount of data should be used for training
   forecast_duration: 5m #How data points should be predicted, here it will predict for 5 mins
