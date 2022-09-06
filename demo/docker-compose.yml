@@ -9,6 +9,10 @@ volumes:
     driver: local
   grafana_data: 
     driver: local
+  influxdb-storage:
+    driver: local
+  chronograf-storage:
+    driver: local
 
 services:
   node-exporter:
@@ -49,7 +53,40 @@ services:
       - 9090
     networks:
       - monitoring
-  
+  influxdb:
+    image: influxdb:1.8
+    ports:
+      - '8086:8086'
+    expose:
+      - 8086
+    volumes:
+      - influxdb-storage:/var/lib/influxdb
+    env_file:
+      - ./influxdb/.env
+    environment:
+      - INFLUXDB_DB=db0
+      - INFLUXDB_ADMIN_USER=${INFLUXDB_USERNAME}
+      - INFLUXDB_ADMIN_PASSWORD=${INFLUXDB_PASSWORD}
+    networks:
+      - monitoring
+  chronograf:
+    image: chronograf:latest
+    ports:
+      - '8888:8888'
+    expose:
+      - 8888
+    volumes:
+      - chronograf-storage:/var/lib/chronograf
+    depends_on:
+      - influxdb
+    env_file:
+      - ./influxdb/.env
+    environment:
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_USERNAME=${INFLUXDB_USERNAME}
+      - INFLUXDB_PASSWORD=${INFLUXDB_PASSWORD}
+    networks:
+      - monitoring
   grafana:
     image: grafana/grafana
     user: "472"
