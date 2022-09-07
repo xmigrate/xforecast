@@ -1,61 +1,12 @@
-prometheus_url: http://host.docker.internal:9000
 
 metrics:
-- name: memory_usage  #metric name in prometheus
-  start_time: '2022-08-17T09:23:00.000Z'
-  end_time: '2022-08-17T09:33:00.000Z'
-  query: 100 - ((node_memory_MemAvailable_bytes{instance="node-exporter:9100"} * 100) / node_memory_MemTotal_bytes{instance="node-exporter:9100"})
-  training_interval: 1h #amount of data should be used for training
-  forecast_duration: 10m #How data points should be predicted, here it will predict for 5 mins
-  forecast_every: 120 #At what interval the app do the predictions 
-  forecast_basedon: 600 #Forecast based on past how many data points
-  write_back_metric: forecast_mem_usage #Where should it write back the metrics
-- name: pgfault  #metric name in prometheus
-  start_time: '2022-08-17T08:03:00.000Z'
-  end_time: '2022-08-17T09:33:00.000Z'
-  query: rate(node_vmstat_pgfault{instance="node-exporter:9100"}[1h])
-  training_interval: 1h #amount of data should be used for training
-  forecast_duration: 10m #How data points should be predicted, here it will predict for 5 mins
-  forecast_every: 300 #At what interval the app do the predictions 
-  forecast_basedon: 1800 #Forecast based on past how many data points
-  write_back_metric: forecast_pgfault #Where should it write back the metrics
-- name: Entropy  #metric name in prometheus
-  start_time: '2022-08-17T08:33:00.000Z'
-  end_time: '2022-08-17T09:33:00.000Z'
-  query: node_entropy_available_bits{instance="node-exporter:9100"}
-  training_interval: 1h #amount of data should be used for training
-  forecast_duration: 10m #How data points should be predicted, here it will predict for 5 mins
-  forecast_every: 300 #At what interval the app do the predictions 
-  forecast_basedon: 3600 #Forecast based on past how many data points
-  write_back_metric: forecast_entropy #Where should it write back the metrics
-- name: Entropy_1 #metric name in prometheus
-  start_time: '2022-08-17T08:33:00.000Z'
-  end_time: '2022-08-17T09:33:00.000Z'
-  query: node_entropy_available_bits{instance="node-exporter:9100"}
-  training_interval: 1h #amount of data should be used for training
-  forecast_duration: 10m #How data points should be predicted, here it will predict for 5 mins
-  forecast_every: 60 #At what interval the app do the predictions 
-  forecast_basedon: 3600 #Forecast based on past how many data points
-  write_back_metric: forecast_entropy_1 #Where should it write back the metrics
-- name: Entropy_2 #metric name in prometheus
-  start_time: '2022-08-17T08:33:00.000Z'
-  end_time: '2022-08-17T09:33:00.000Z'
-  query: node_entropy_available_bits{instance="node-exporter:9100"}
-  training_interval: 1h #amount of data should be used for training
-  forecast_duration: 10m #How data points should be predicted, here it will predict for 5 mins
-  forecast_every: 120 #At what interval the app do the predictions 
-  forecast_basedon: 3600 #Forecast based on past how many data points
-  write_back_metric: forecast_entropy_2 #Where should it write back the metrics
-- name: memory_usage_new #metric name in prometheus
-  start_time: '2022-08-17T09:23:00.000Z'
-  end_time: '2022-08-17T09:33:00.000Z'
-  query: 100+*+%281+-+%28%28avg_over_time%28node_memory_MemFree_bytes%5B10m%5D%29+%2B+avg_over_time%28node_memory_Cached_bytes%5B10m%5D%29+%2B+avg_over_time%28node_memory_Buffers_bytes%5B10m%5D%29%29+%2F+avg_over_time%28node_memory_MemTotal_bytes%5B10m%5D%29%29%29
-  training_interval: 1h #amount of data should be used for training
-  forecast_duration: 10m #How data points should be predicted, here it will predict for 5 mins
-  forecast_every: 120 #At what interval the app do the predictions 
-  forecast_basedon: 600 #Forecast based on past how many data points
-  write_back_metric: forecast_memory_usage #Where should it write back the metrics
-- name: windows_cpu_time_total  #metric name in prometheus
+- name: usage_user  #metric name in prometheus
+  data_store : influxdb   
+  url: 192.168.1.9
+  port: 8086
+  user : admin
+  pass : admin
+  db_name : telegraf
   start_time: '2022-09-05T06:23:00.000Z'
   end_time: '2022-09-05T06:24:00.000Z'
   query: avg+by(instance)+(windows_cpu_time_total{mode="idle"})
@@ -64,6 +15,21 @@ metrics:
   forecast_every: 60 #At what interval the app do the predictions 
   forecast_basedon: 60 #Forecast based on past how many data points
   write_back_metric: forecast_cpu_time_new #Where should it write back the metrics
+- name: memory_usage  #metric name in prometheus
+  data_store : prometheus  
+  url: http://192.168.1.9:9090
+  port: 9090
+  user : admin
+  pass : admin
+  db_name : telegraf
+  start_time: '2022-09-07T09:26:00.000Z'
+  end_time: '2022-09-07T09:27:00.000Z'
+  query: 100 - ((node_memory_MemAvailable_bytes{instance="node-exporter:9100"} * 100) / node_memory_MemTotal_bytes{instance="node-exporter:9100"})
+  training_interval: 1h #amount of data should be used for training
+  forecast_duration: 5m #How data points should be predicted, here it will predict for 5 mins
+  forecast_every: 60 #At what interval the app do the predictions 
+  forecast_basedon: 60 #Forecast based on past how many data points
+  write_back_metric: forecast_mem_usage #Where should it write back the metrics
 
 
 
