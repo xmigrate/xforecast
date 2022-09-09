@@ -70,7 +70,7 @@ def get_data_from_prometheus(prom_query, start_time, end_time, url):
             data_value.append(element[1]) 
     data_points['Time'] = data_time
     data_points['y'] = data_value
-    #print(data_points)
+    print(data_points)
     return data_points
 
 def dt2ts(dt):

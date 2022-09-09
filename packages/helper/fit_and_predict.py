@@ -27,7 +27,7 @@ def stan_init(m):
         res[pname] = m.params[pname][0]
     return res
 
-async def fit_and_predict(metric_name,data_store,url,port,username,password,db_name,start_time,end_time,prom_query,write_back_metric,periods=1,frequency='60s',old_model_loc=None,new_model_loc='./serialized_model.json'):
+async def fit_and_predict(metric_name,data_store,url,port,username,password,db_name,measurement,start_time,end_time,prom_query,write_back_metric,prev_stime,prev_etime,periods=1,frequency='60s',old_model_loc=None,new_model_loc='./serialized_model.json'):
     """Predicts the values according to the data points recieved 
     
     Parameters
@@ -52,19 +52,12 @@ async def fit_and_predict(metric_name,data_store,url,port,username,password,db_n
     if data_store == 'prometheus':
         data_for_training = get_data_from_prometheus(prom_query,start_time,end_time,url)
     elif data_store == "influxdb":
-        data_for_training = get_data_from_influxdb(metric_name,data_store,url,port,username,password,db_name,start_time,end_time,prom_query,write_back_metric)
+        data_for_training = get_data_from_influxdb(metric_name,data_store,url,port,username,password,db_name,measurement,start_time,end_time,prev_stime,prev_etime,prom_query,write_back_metric)
     df={} 
     df['Time'] =  pd.to_datetime(data_for_training['Time'], format='%d/%m/%y %H:%M:%S')
     df['ds'] = df['Time']
     df['y'] = data_for_training['y']
     df=pd.DataFrame(df)
-
-
-
-
-
-
-
 
     #print(df.shape)
     #print(df.head())
@@ -109,5 +102,7 @@ async def fit_and_predict(metric_name,data_store,url,port,username,password,db_n
             write_to_prometheus(data_to_prom_yhatlower[elements],data_to_prom_tim[elements],write_back_metric+'_yhat_lower',url)
             write_to_prometheus(data_to_prom_yhatupper[elements],data_to_prom_tim[elements],write_back_metric+'_yhat_upper',url)
         elif data_store == "influxdb":
-            write_data_to_influxdb(data_to_prom_yhat[elements],data_to_prom_tim[elements],write_back_metric+'_yhat',url,port,username,password,db_name)
+            write_data_to_influxdb(data_to_prom_yhat[elements],data_to_prom_tim[elements],write_back_metric+'_yhat',url,port,username,password,db_name,measurement)
+            write_data_to_influxdb(data_to_prom_yhatlower[elements],data_to_prom_tim[elements],write_back_metric+'_yhat_lower',url,port,username,password,db_name,measurement)
+            write_data_to_influxdb(data_to_prom_yhatupper[elements],data_to_prom_tim[elements],write_back_metric+'_yhat_upper',url,port,username,password,db_name,measurement)
     

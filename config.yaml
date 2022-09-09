@@ -7,23 +7,41 @@ metrics:
   user : admin
   pass : admin
   db_name : telegraf
-  start_time: '2022-09-05T06:23:00.000Z'
-  end_time: '2022-09-05T06:24:00.000Z'
-  query: avg+by(instance)+(windows_cpu_time_total{mode="idle"})
+  measurement : cpu
+  start_time: '2022-09-09 12:49:00'
+  end_time: '2022-09-09 12:50:00'
+  query: SELECT usage_user FROM "autogen"."cpu" WHERE time >= '2022-09-09 12:49:00' AND time <= '2022-09-09 12:50:00'
   training_interval: 1h #amount of data should be used for training
   forecast_duration: 5m #How data points should be predicted, here it will predict for 5 mins
   forecast_every: 60 #At what interval the app do the predictions 
   forecast_basedon: 60 #Forecast based on past how many data points
   write_back_metric: forecast_cpu_time_new #Where should it write back the metrics
-- name: memory_usage  #metric name in prometheus
-  data_store : prometheus  
-  url: http://192.168.1.9:9090
-  port: 9090
+- name: cpu_usage  #metric name in prometheus
+  data_store : influxdb   
+  url: 192.168.1.9
+  port: 8086
   user : admin
   pass : admin
   db_name : telegraf
-  start_time: '2022-09-07T09:26:00.000Z'
-  end_time: '2022-09-07T09:27:00.000Z'
+  measurement : cpu
+  start_time: '2022-09-09 12:49:00'
+  end_time: '2022-09-09 12:50:00'
+  query: SELECT mean("usage_idle") *-1 +100 FROM "autogen"."cpu" WHERE ("host" = 'ip-172-31-31-81') AND time >= '2022-09-09 12:49:00' AND time <= '2022-09-09 12:50:00' GROUP BY time(10s) 
+  training_interval: 1h #amount of data should be used for training
+  forecast_duration: 5m #How data points should be predicted, here it will predict for 5 mins
+  forecast_every: 60 #At what interval the app do the predictions 
+  forecast_basedon: 60 #Forecast based on past how many data points
+  write_back_metric: forecast_cpu_use #Where should it write back the metrics
+- name: memory_usage  #metric name in prometheus
+  data_store : prometheus  
+  url: http://192.168.1.9:9090
+  port: 
+  user : 
+  pass : 
+  db_name : 
+  measurement : cpu
+  start_time: '2022-09-09T12:49:00.000Z'
+  end_time: '2022-09-09T12:50:00.000Z'
   query: 100 - ((node_memory_MemAvailable_bytes{instance="node-exporter:9100"} * 100) / node_memory_MemTotal_bytes{instance="node-exporter:9100"})
   training_interval: 1h #amount of data should be used for training
   forecast_duration: 5m #How data points should be predicted, here it will predict for 5 mins
