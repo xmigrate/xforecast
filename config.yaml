@@ -1,4 +1,4 @@
-prometheus_url: http://localhost:9090
+prometheus_url: http://host.docker.internal:9000
 
 metrics:
 - name: memory_usage  #metric name in prometheus

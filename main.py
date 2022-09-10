@@ -21,7 +21,7 @@ async def main():
     url =data['prometheus_url']
     await forecast(metric_list,url)
         
-async def predict_every(metric_name,start_time,end_time,url,prom_query,write_back_metric,forecast_every,forecast_basedon,models):
+async def predict_every(metric_name,start_time,end_time,url,prom_query,write_back_metric,forecast_every,forecast_basedon,model):
     """Calls fit_and_predict function at the required intervals
 
     Parameters
@@ -34,10 +34,10 @@ async def predict_every(metric_name,start_time,end_time,url,prom_query,write_bac
     write_back_metric = name of the predicted/written metric
     forecast_every: at what interval the app does the predictions
     forecast_basedon: forecast based on past how many data points
-    models: dictionary containing the model name and its hyperparameters for tuning
+    model: dictionary containing the model name and its hyperparameters for tuning
     
     """
-    if models['model_name'] == 'prophet':
+    if model['model_name'] == 'prophet':
         n=0
         while True:
             periods=(forecast_every/60)
@@ -50,10 +50,10 @@ async def predict_every(metric_name,start_time,end_time,url,prom_query,write_bac
                 #print("2nd")
                 end_time = int(time.time())
                 start_time = end_time - (forecast_basedon)
-                await fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_back_metric,models,periods=periods,frequency='60s',old_model_loc=old_model_loc)
+                await fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_back_metric,model,periods=periods,frequency='60s',old_model_loc=old_model_loc)
             else:
                 #print("og")
-                await fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_back_metric,models,periods=periods,frequency='60s',old_model_loc=None)
+                await fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_back_metric,model,periods=periods,frequency='60s',old_model_loc=None)
             n+=1
             await asyncio.sleep((forecast_every))
 
