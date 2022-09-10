@@ -29,11 +29,12 @@ async def predict_every(metric_name,start_time,end_time,url,prom_query,write_bac
     metric_name : metric name in prometheus
     start_time : start time for the prometheus query
     end_time : end time for the prometheus query
-    url : Prometheus url
-    prom_query = Prometheus query
+    url : prometheus url
+    prom_query = prometheus query
     write_back_metric = name of the predicted/written metric
-    forecast_every: At what interval the app do the predictions
-    forecast_basedon: Forecast based on past how many data points
+    forecast_every: at what interval the app does the predictions
+    forecast_basedon: forecast based on past how many data points
+    models: dictionary containing the model name and its hyperparameters for tuning
     
     """
     if models['model_name'] == 'prophet':

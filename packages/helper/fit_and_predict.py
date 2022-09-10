@@ -37,7 +37,8 @@ async def fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_b
     url : Prometheus url
     prom_query = Prometheus query
     write_back_metric = name of the predicted/written metric
-    periods = no of data points predicted
+    models: dictionary containing the model name and its hyperparameters for tuning
+    periods = number of data points predicted
     frequency =  
     old_model_location = location of the trained model
     new_model_location = location where the newly trained model should be saved
