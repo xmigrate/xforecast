@@ -21,7 +21,7 @@ async def main():
     url =data['prometheus_url']
     await forecast(metric_list,url)
         
-async def predict_every(metric_name,start_time,end_time,url,prom_query,write_back_metric,forecast_every,forecast_basedon):
+async def predict_every(metric_name,start_time,end_time,url,prom_query,write_back_metric,forecast_every,forecast_basedon,models):
     """Calls fit_and_predict function at the required intervals
 
     Parameters
@@ -36,24 +36,25 @@ async def predict_every(metric_name,start_time,end_time,url,prom_query,write_bac
     forecast_basedon: Forecast based on past how many data points
     
     """
-    n=0
-    while True:
-        periods=(forecast_every/60)
-        periods = int(periods)
-        print(periods)
-        file_exists = exists('./packages/models/'+metric_name+'.json')
-        if(file_exists):
-            old_model_loc = './packages/models/'+metric_name+'.json'
-        if n>0:
-            #print("2nd")
-            end_time = int(time.time())
-            start_time = end_time - (forecast_basedon)
-            await fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_back_metric,periods=periods,frequency='60s',old_model_loc=old_model_loc)
-        else:
-            #print("og")
-            await fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_back_metric,periods=periods,frequency='60s',old_model_loc=None)
-        n+=1
-        await asyncio.sleep((forecast_every))
+    if models['model_name'] == 'prophet':
+        n=0
+        while True:
+            periods=(forecast_every/60)
+            periods = int(periods)
+            print(periods)
+            file_exists = exists('./packages/models/'+metric_name+'.json')
+            if(file_exists):
+                old_model_loc = './packages/models/'+metric_name+'.json'
+            if n>0:
+                #print("2nd")
+                end_time = int(time.time())
+                start_time = end_time - (forecast_basedon)
+                await fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_back_metric,models,periods=periods,frequency='60s',old_model_loc=old_model_loc)
+            else:
+                #print("og")
+                await fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_back_metric,models,periods=periods,frequency='60s',old_model_loc=None)
+            n+=1
+            await asyncio.sleep((forecast_every))
 
 
 async def forecast(metric_list,url): 
@@ -70,7 +71,7 @@ async def forecast(metric_list,url):
         #get status of the async functions and restart failed ones
         async_params = []
         for metric in metric_list:
-            async_params.append(predict_every(metric['name'],metric['start_time'],metric['end_time'],url,metric['query'],metric['write_back_metric'],metric['forecast_every'],metric['forecast_basedon']))
+            async_params.append(predict_every(metric['name'],metric['start_time'],metric['end_time'],url,metric['query'],metric['write_back_metric'],metric['forecast_every'],metric['forecast_basedon'],metric['models']))
         async_params = tuple(async_params)
         g = asyncio.gather(*async_params)
         while not g.done():
