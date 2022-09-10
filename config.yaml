@@ -37,7 +37,7 @@ metrics:
 - name: memory_usage  #metric name in prometheus
   data_store : 
     name : prometheus  
-    url: http://192.168.1.9:9090
+    url: http://host.docker.internal:9000
   start_time: '2022-09-09T12:49:00.000Z'
   end_time: '2022-09-09T12:50:00.000Z'
   query: 100 - ((node_memory_MemAvailable_bytes{instance="node-exporter:9100"} * 100) / node_memory_MemTotal_bytes{instance="node-exporter:9100"})
