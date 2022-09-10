@@ -1,13 +1,14 @@
 
 metrics:
 - name: usage_user  #metric name in prometheus
-  data_store : influxdb   
-  url: 192.168.1.9
-  port: 8086
-  user : admin
-  pass : admin
-  db_name : telegraf
-  measurement : cpu
+  data_store : 
+    name : influxdb   
+    url: 192.168.1.9
+    port: 8086
+    user : admin
+    pass : admin
+    db_name : telegraf
+    measurement : cpu
   start_time: '2022-09-09 12:49:00'
   end_time: '2022-09-09 12:50:00'
   query: SELECT usage_user FROM "autogen"."cpu" WHERE time >= '2022-09-09 12:49:00' AND time <= '2022-09-09 12:50:00'
@@ -17,13 +18,14 @@ metrics:
   forecast_basedon: 60 #Forecast based on past how many data points
   write_back_metric: forecast_cpu_time_new #Where should it write back the metrics
 - name: cpu_usage  #metric name in prometheus
-  data_store : influxdb   
-  url: 192.168.1.9
-  port: 8086
-  user : admin
-  pass : admin
-  db_name : telegraf
-  measurement : cpu
+  data_store : 
+    name : influxdb   
+    url: 192.168.1.9
+    port: 8086
+    user : admin
+    pass : admin
+    db_name : telegraf
+    measurement : cpu
   start_time: '2022-09-09 12:49:00'
   end_time: '2022-09-09 12:50:00'
   query: SELECT mean("usage_idle") *-1 +100 FROM "autogen"."cpu" WHERE ("host" = 'ip-172-31-31-81') AND time >= '2022-09-09 12:49:00' AND time <= '2022-09-09 12:50:00' GROUP BY time(10s) 
@@ -33,13 +35,9 @@ metrics:
   forecast_basedon: 60 #Forecast based on past how many data points
   write_back_metric: forecast_cpu_use #Where should it write back the metrics
 - name: memory_usage  #metric name in prometheus
-  data_store : prometheus  
-  url: http://192.168.1.9:9090
-  port: 
-  user : 
-  pass : 
-  db_name : 
-  measurement : cpu
+  data_store : 
+    name : prometheus  
+    url: http://192.168.1.9:9090
   start_time: '2022-09-09T12:49:00.000Z'
   end_time: '2022-09-09T12:50:00.000Z'
   query: 100 - ((node_memory_MemAvailable_bytes{instance="node-exporter:9100"} * 100) / node_memory_MemTotal_bytes{instance="node-exporter:9100"})

@@ -5,36 +5,24 @@ from dateutil import parser
 
 
 
-def get_data_from_influxdb(metric_name,data_store,url,port,username,password,db_name,measurement,start_time,end_time,prev_stime,prev_etime,prom_query,write_back_metric):
-
+def get_data_from_influxdb(data_store,start_time,end_time,prev_stime,prev_etime,prom_query):
+    url = data_store['url']
+    port = data_store['port']
+    username = data_store['user']
+    password = data_store['pass']
+    db_name = data_store['db_name']
     client = InfluxDBClient(url, port, username, password, db_name)
-    #print(client.get_list_database())
-    #print(client.get_list_measurements())
-
-
-    # start_time = "'"+ start_time + "'"
-    # end_time ="'"+ end_time + "'"
 
     
-    #print(start_time)
-    metric_name = metric_name
-    measurement = measurement
+    
     prom_query = prom_query.replace(prev_stime,start_time)
     prom_query = prom_query.replace(prev_etime,end_time)
     query=prom_query
     print(query)
     value = client.query(query)
-    #print()
-    values = list(value.get_points(measurement=measurement))
-    #print(values)
+    #print(value)
     value = list(value)
     
-    # for elements in value[0]:
-    #     k=elements.keys()
-    #     k=list(k)
-    #     print(elements[k[0]])
-
-
     data_points = {}
     data_time = []
     data_value=[]
@@ -51,7 +39,13 @@ def get_data_from_influxdb(metric_name,data_store,url,port,username,password,db_
     print(data_points)
     return data_points
 
-def write_data_to_influxdb(val,tim,write_name,url,port,username,password,db_name,measurement):
+def write_data_to_influxdb(val,tim,write_name,data_store):
+    url = data_store['url']
+    port = data_store['port']
+    username = data_store['user']
+    password = data_store['pass']
+    db_name = data_store['db_name']
+    measurement = data_store['measurement']
     client = InfluxDBClient(url, port, username, password, db_name)
     measurement = measurement
     json_payload=[]
