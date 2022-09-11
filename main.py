@@ -1,6 +1,7 @@
 import yaml
 import asyncio
 import time
+from datetime import datetime,timedelta
 from packages.datasources.logger import *
 from packages.helper.fit_and_predict import *
 from os.path import exists
@@ -18,10 +19,9 @@ async def main():
     metric_list = []
     for metric in data['metrics']:
         metric_list.append(metric)
-    url =data['prometheus_url']
-    await forecast(metric_list,url)
+    await forecast(metric_list)
         
-async def predict_every(metric_name,start_time,end_time,url,prom_query,write_back_metric,forecast_every,forecast_basedon):
+async def predict_every(metric_name,data_store,start_time,end_time,prom_query,write_back_metric,forecast_every,forecast_basedon):
     """Calls fit_and_predict function at the required intervals
 
     Parameters
@@ -37,26 +37,39 @@ async def predict_every(metric_name,start_time,end_time,url,prom_query,write_bac
     
     """
     n=0
+    prev_stime = start_time
+    prev_etime = end_time
     while True:
         periods=(forecast_every/60)
         periods = int(periods)
+        
         print(periods)
         file_exists = exists('./packages/models/'+metric_name+'.json')
         if(file_exists):
             old_model_loc = './packages/models/'+metric_name+'.json'
         if n>0:
             #print("2nd")
-            end_time = int(time.time())
-            start_time = end_time - (forecast_basedon)
-            await fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_back_metric,periods=periods,frequency='60s',old_model_loc=old_model_loc)
+            if data_store['name'] == 'prometheus':
+                end_time = int(time.time())
+                start_time = end_time - (forecast_basedon)
+            elif data_store['name'] == 'influxdb':
+                end_time = datetime.utcnow()
+                end_time = end_time.replace(second=0)
+                t = int(forecast_basedon/60)
+                start_time = end_time - timedelta(minutes=t)
+                start_time = start_time.strftime('%Y-%m-%d %H:%M:%S')
+                end_time = end_time.strftime('%Y-%m-%d %H:%M:%S')
+
+            await fit_and_predict(metric_name,data_store,start_time,end_time,prom_query,write_back_metric,prev_stime,prev_etime,periods=periods,frequency='60s',old_model_loc=old_model_loc)
         else:
             #print("og")
-            await fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_back_metric,periods=periods,frequency='60s',old_model_loc=None)
+            await fit_and_predict(metric_name,data_store,start_time,end_time,prom_query,write_back_metric,prev_stime,prev_etime,periods=periods,frequency='60s',old_model_loc=None)
+
         n+=1
         await asyncio.sleep((forecast_every))
 
 
-async def forecast(metric_list,url): 
+async def forecast(metric_list): 
     """Creates a tuple of functions and calls them using asyncio.gather. 
     calls recursively if there is an exception.
 
@@ -70,7 +83,7 @@ async def forecast(metric_list,url):
         #get status of the async functions and restart failed ones
         async_params = []
         for metric in metric_list:
-            async_params.append(predict_every(metric['name'],metric['start_time'],metric['end_time'],url,metric['query'],metric['write_back_metric'],metric['forecast_every'],metric['forecast_basedon']))
+            async_params.append(predict_every(metric['name'],metric['data_store'],metric['start_time'],metric['end_time'],metric['query'],metric['write_back_metric'],metric['forecast_every'],metric['forecast_basedon']))
         async_params = tuple(async_params)
         g = asyncio.gather(*async_params)
         while not g.done():
@@ -87,7 +100,7 @@ async def forecast(metric_list,url):
             logger("Some error"+str(e),"error")
             break
          
-    await forecast(metric_list,url)
+    await forecast(metric_list)
     
 
 asyncio.run(main())
