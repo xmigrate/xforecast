@@ -2,6 +2,7 @@ import pandas as pd
 from prophet import Prophet
 from prophet.serialize import model_to_json, model_from_json
 from packages.datasources.prometheus import *
+from packages.datasources.influx import *
 
 
 def stan_init(m):
@@ -26,7 +27,7 @@ def stan_init(m):
         res[pname] = m.params[pname][0]
     return res
 
-async def fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_back_metric,model,periods=1,frequency='60s',old_model_loc=None,new_model_loc='./serialized_model.json'):
+async def fit_and_predict(metric_name,data_store,start_time,end_time,prom_query,write_back_metric,models,prev_stime,prev_etime,periods=1,frequency='60s',old_model_loc=None,new_model_loc='./serialized_model.json'):
     """Predicts the values according to the data points recieved 
     
     Parameters
@@ -49,13 +50,17 @@ async def fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_b
     old_model = None
     prophet_model = None
     new_model_loc = './packages/models/'+metric_name+'.json'
-    data_for_training = get_data_from_prometheus(prom_query,start_time,end_time,url)
-    df={}
+    if data_store['name'] == 'prometheus':
+        data_for_training = get_data_from_prometheus(prom_query,start_time,end_time,data_store['url'])
+    elif data_store['name'] == "influxdb":
+        data_for_training = get_data_from_influxdb(data_store,start_time,end_time,prev_stime,prev_etime,prom_query)
+    df={} 
     df['Time'] =  pd.to_datetime(data_for_training['Time'], format='%d/%m/%y %H:%M:%S')
     df['ds'] = df['Time']
     df['y'] = data_for_training['y']
     params = model["hyperparameters"]
     df=pd.DataFrame(df)
+
     #print(df.shape)
     #print(df.head())
     try:
@@ -87,12 +92,19 @@ async def fit_and_predict(metric_name,start_time,end_time,url,prom_query,write_b
         response['status'] = 'failure'
         logger(str(e),"error")
     #print(response)
+
+
     data_to_prom_yhatlower = response['yhat_lower'].to_dict()
     data_to_prom_yhatupper = response['yhat_upper'].to_dict()
     data_to_prom_yhat = response['yhat'].to_dict()
     data_to_prom_tim = response['ds'].to_dict()
     for elements in data_to_prom_tim:
-        write_to_prometheus(data_to_prom_yhat[elements],data_to_prom_tim[elements],write_back_metric+'_yhat',url)
-        write_to_prometheus(data_to_prom_yhatlower[elements],data_to_prom_tim[elements],write_back_metric+'_yhat_lower',url)
-        write_to_prometheus(data_to_prom_yhatupper[elements],data_to_prom_tim[elements],write_back_metric+'_yhat_upper',url)
+        if data_store['name'] == "prometheus":
+            write_to_prometheus(data_to_prom_yhat[elements],data_to_prom_tim[elements],write_back_metric+'_yhat',data_store['url'])
+            write_to_prometheus(data_to_prom_yhatlower[elements],data_to_prom_tim[elements],write_back_metric+'_yhat_lower',data_store['url'])
+            write_to_prometheus(data_to_prom_yhatupper[elements],data_to_prom_tim[elements],write_back_metric+'_yhat_upper',data_store['url'])
+        elif data_store['name'] == "influxdb":
+            write_data_to_influxdb(data_to_prom_yhat[elements],data_to_prom_tim[elements],write_back_metric+'_yhat',data_store)
+            write_data_to_influxdb(data_to_prom_yhatlower[elements],data_to_prom_tim[elements],write_back_metric+'_yhat_lower',data_store)
+            write_data_to_influxdb(data_to_prom_yhatupper[elements],data_to_prom_tim[elements],write_back_metric+'_yhat_upper',data_store)
     
