@@ -30,8 +30,6 @@ You can start the application in 2 ways, either from source code or with docker 
 First we need to edit the configuration. Below is a sample config which predict `mem_usage` of linux server.
 
 ```
-prometheus_url: http://<prometheus_url:port>
-
 metrics:
  - name: memory_usage  #metric name in prometheus
   data_store : 
