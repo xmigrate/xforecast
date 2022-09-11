@@ -27,7 +27,7 @@ def stan_init(m):
         res[pname] = m.params[pname][0]
     return res
 
-async def fit_and_predict(metric_name,data_store,start_time,end_time,prom_query,write_back_metric,models,prev_stime,prev_etime,periods=1,frequency='60s',old_model_loc=None,new_model_loc='./serialized_model.json'):
+async def fit_and_predict(metric_name,data_store,start_time,end_time,prom_query,write_back_metric,model,prev_stime,prev_etime,periods=1,frequency='60s',old_model_loc=None,new_model_loc='./serialized_model.json'):
     """Predicts the values according to the data points recieved 
     
     Parameters
@@ -35,10 +35,9 @@ async def fit_and_predict(metric_name,data_store,start_time,end_time,prom_query,
     metric_name : metric name in prometheus
     start_time : start time for the prometheus query
     end_time : end time for the prometheus query
-    url : Prometheus url
     prom_query = Prometheus query
     write_back_metric = name of the predicted/written metric
-    models: dictionary containing the model name and its hyperparameters for tuning
+    model: dictionary containing the model name and its hyperparameters for tuning
     periods = number of data points predicted
     frequency =  
     old_model_location = location of the trained model

@@ -6,4 +6,5 @@ prophet==1.0.1
 pyyaml
 requests
 datetime
+influxdb
 protobuf==3.20.0

@@ -21,7 +21,7 @@ async def main():
         metric_list.append(metric)
     await forecast(metric_list)
         
-async def predict_every(metric_name,data_store,start_time,end_time,prom_query,write_back_metric,forecast_every,forecast_basedon,models):
+async def predict_every(metric_name,data_store,start_time,end_time,prom_query,write_back_metric,forecast_every,forecast_basedon,model):
     """Calls fit_and_predict function at the required intervals
 
     Parameters
@@ -43,7 +43,7 @@ async def predict_every(metric_name,data_store,start_time,end_time,prom_query,wr
         while True:
             periods=(forecast_every/60)
             periods = int(periods)
-            # print(periods)
+            #print(periods)
             file_exists = exists('./packages/models/'+metric_name+'.json')
             if(file_exists):
                 old_model_loc = './packages/models/'+metric_name+'.json'
@@ -59,13 +59,12 @@ async def predict_every(metric_name,data_store,start_time,end_time,prom_query,wr
                     start_time = end_time - timedelta(minutes=t)
                     start_time = start_time.strftime('%Y-%m-%d %H:%M:%S')
                     end_time = end_time.strftime('%Y-%m-%d %H:%M:%S')
-                await fit_and_predict(metric_name,data_store,start_time,end_time,prom_query,write_back_metric,models,prev_stime,prev_etime,periods=periods,frequency='60s',old_model_loc=old_model_loc)
+                await fit_and_predict(metric_name,data_store,start_time,end_time,prom_query,write_back_metric,model,prev_stime,prev_etime,periods=periods,frequency='60s',old_model_loc=old_model_loc)
             else:
                 #print("og")
-                await fit_and_predict(metric_name,data_store,start_time,end_time,prom_query,write_back_metric,models,prev_stime,prev_etime,periods=periods,frequency='60s',old_model_loc=None)
+                await fit_and_predict(metric_name,data_store,start_time,end_time,prom_query,write_back_metric,model,prev_stime,prev_etime,periods=periods,frequency='60s',old_model_loc=None)
             n+=1
             await asyncio.sleep((forecast_every))
-
 
 async def forecast(metric_list): 
     """Creates a tuple of functions and calls them using asyncio.gather. 

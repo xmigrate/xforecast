@@ -3,7 +3,7 @@ metrics:
 - name: usage_user  #metric name in prometheus
   data_store : 
     name : influxdb   
-    url: 192.168.1.9
+    url:  192.168.1.9
     port: 8086
     user : admin
     pass : admin
@@ -28,7 +28,7 @@ metrics:
 - name: cpu_usage  #metric name in prometheus
   data_store : 
     name : influxdb   
-    url: 192.168.1.9
+    url:  192.168.1.9
     port: 8086
     user : admin
     pass : admin
