@@ -33,16 +33,19 @@ First we need to edit the configuration. Below is a sample config which predict 
 prometheus_url: http://<prometheus_url:port>
 
 metrics:
- - name: memory_usage  #metric name
-   start_time: '2022-08-17T09:23:00.000Z' #start time for the training data
-   end_time: '2022-08-17T09:33:00.000Z' #end time for the training data
-   query: 100 - ((node_memory_MemAvailable_bytes{instance="node-exporter:9100"} * 100) / node_memory_MemTotal_bytes{instance="node-exporter:9100"}) #query as in prometheus
-   training_interval: 1h #amount of data should be used for training
-   forecast_duration: 10m #How data points should be predicted, here it will predict for 5 mins
-   forecast_every: 120 #At what interval the app do the predictions 
-   forecast_basedon: 600 #Forecast based on past how many data points
-   write_back_metric: forecast_mem_usage #Where should it write back the metrics
-   models : 
+ - name: memory_usage  #metric name in prometheus
+  data_store : 
+    name : prometheus  
+    url: http://host.docker.internal:9000
+  start_time: '2022-09-09T12:49:00.000Z'
+  end_time: '2022-09-09T12:50:00.000Z'
+  query: 100 - ((node_memory_MemAvailable_bytes{instance="node-exporter:9100"} * 100) / node_memory_MemTotal_bytes{instance="node-exporter:9100"})
+  training_interval: 1h #amount of data should be used for training
+  forecast_duration: 5m #How data points should be predicted, here it will predict for 5 mins
+  forecast_every: 60 #At what interval the app do the predictions 
+  forecast_basedon: 60 #Forecast based on past how many data points
+  write_back_metric: forecast_mem_usage #Where should it write back the metrics
+  models : 
     model_name: prophet
     hyperparameters:
       changepoint_prior_scale : 0.05 #determines the flexibility of the trend changes
