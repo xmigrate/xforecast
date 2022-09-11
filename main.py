@@ -53,15 +53,13 @@ async def predict_every(metric_name,data_store,start_time,end_time,prom_query,wr
                 end_time = int(time.time())
                 start_time = end_time - (forecast_basedon)
             elif data_store['name'] == 'influxdb':
-                print(prev_etime,prev_stime)
                 end_time = datetime.utcnow()
                 end_time = end_time.replace(second=0)
-                print(end_time)
                 t = int(forecast_basedon/60)
                 start_time = end_time - timedelta(minutes=t)
                 start_time = start_time.strftime('%Y-%m-%d %H:%M:%S')
                 end_time = end_time.strftime('%Y-%m-%d %H:%M:%S')
-            print(start_time,end_time)
+
             await fit_and_predict(metric_name,data_store,start_time,end_time,prom_query,write_back_metric,prev_stime,prev_etime,periods=periods,frequency='60s',old_model_loc=old_model_loc)
         else:
             #print("og")
