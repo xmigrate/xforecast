@@ -70,7 +70,6 @@ def get_data_from_prometheus(prom_query, start_time, end_time, url):
             data_value.append(element[1]) 
     data_points['Time'] = data_time
     data_points['y'] = data_value
-    #print(data_points)
     return data_points
 
 def dt2ts(dt):
@@ -99,20 +98,14 @@ def write_to_prometheus(val,tim,write_name,prom_url):
     label.name = "__name__"
     label.value = write_name
     
-    # as many labels you like
-    # label = series.labels.add()
-    # label.name = "ssl_cipher"
-    # label.value = "some_value"
 
     sample = series.samples.add()
     sample.value = val # your count?
     dtl = int(tim.timestamp())
-    # print(dtl)
-    # dtt = datetime.datetime.fromtimestamp(dtl)
-    # print(dtt)
+
     sample.timestamp = dtl *1000
     
-    print(sample.timestamp)
+    #print(sample.timestamp)
     
 
 
@@ -128,7 +121,7 @@ def write_to_prometheus(val,tim,write_name,prom_url):
     }
     try:
         response = requests.post(url, headers=headers, data=compressed)
-        print(response)
+        #print(response)
         logger(response,"warning")
     except Exception as e:
         print(e)
