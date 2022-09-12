@@ -24,9 +24,9 @@ def get_data_from_influxdb(data_store,start_time,end_time,prev_stime,prev_etime,
 
     value = list(value)
     if value:
-        logger("Fetching data from Telegraf - Succes","warning")
+        logger("Fetching data from influxdb - Success","warning")
     else:
-        logger("Fetching data from Telegraf - Failed","warning")
+        logger("Fetching data from influxdb - Failed","warning")
     data_points = {}
     data_time = []
     data_value=[]
@@ -59,7 +59,12 @@ def write_data_to_influxdb(val,tim,write_name,data_store):
     data['fields'] = {write_name:val}
     json_payload.append(data)
 
-    client.write_points(json_payload)
+    if client.write_points(json_payload):
+        logger("Writing data to influxdb - Success","warning")
+    else:
+        logger("Writing data to influxdb - Failed","warning")
+        
+
     
 
     

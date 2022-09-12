@@ -32,7 +32,7 @@ def prometheus(query):
     value = result['data']['result']
     status=result['status']
     if value:
-        logger("Fetching data from prometheus - Succes","warning")
+        logger("Fetching data from prometheus - Success","warning")
     else:
         logger("Fetching data from prometheus - Failed","warning")
     return value
@@ -88,7 +88,7 @@ def write_to_prometheus(val,tim,write_name,prom_url):
     write_name: Custom metric name to be written
 
     """
-    logger("Writing data to prometheus","warning")
+    #logger("Writing data to prometheus","warning")
     write_request = WriteRequest()
 
     series = write_request.timeseries.add()
@@ -122,7 +122,13 @@ def write_to_prometheus(val,tim,write_name,prom_url):
     try:
         response = requests.post(url, headers=headers, data=compressed)
         #print(response)
-        logger(response,"warning")
+        response = str(response)
+        if response == '<Response [204]>':
+            #print("writing failed")
+            logger("writing data to prometheus - Success","warning")
+        else:
+            logger("writing data to prometheus - Failed","warning")
+
     except Exception as e:
         print(e)
         logger(str(e),"error")
