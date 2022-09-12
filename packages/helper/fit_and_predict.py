@@ -27,7 +27,7 @@ def stan_init(m):
         res[pname] = m.params[pname][0]
     return res
 
-async def fit_and_predict(metric_name,data_store,start_time,end_time,prom_query,write_back_metric,prev_stime,prev_etime,periods=1,frequency='60s',old_model_loc=None,new_model_loc='./serialized_model.json'):
+async def fit_and_predict(metric_name,data_store,start_time,end_time,prom_query,write_back_metric,model,prev_stime,prev_etime,periods=1,frequency='60s',old_model_loc=None,new_model_loc='./serialized_model.json'):
     """Predicts the values according to the data points recieved 
     
     Parameters
@@ -35,10 +35,10 @@ async def fit_and_predict(metric_name,data_store,start_time,end_time,prom_query,
     metric_name : metric name in prometheus
     start_time : start time for the prometheus query
     end_time : end time for the prometheus query
-    url : Prometheus url
     prom_query = Prometheus query
     write_back_metric = name of the predicted/written metric
-    periods = no of data points predicted
+    model: dictionary containing the model name and its hyperparameters for tuning
+    periods = number of data points predicted
     frequency =  
     old_model_location = location of the trained model
     new_model_location = location where the newly trained model should be saved
@@ -47,7 +47,7 @@ async def fit_and_predict(metric_name,data_store,start_time,end_time,prom_query,
 
     response = {}
     old_model = None
-    model = None
+    prophet_model = None
     new_model_loc = './packages/models/'+metric_name+'.json'
     if data_store['name'] == 'prometheus':
         data_for_training = get_data_from_prometheus(prom_query,start_time,end_time,data_store['url'])
@@ -57,6 +57,7 @@ async def fit_and_predict(metric_name,data_store,start_time,end_time,prom_query,
     df['Time'] =  pd.to_datetime(data_for_training['Time'], format='%d/%m/%y %H:%M:%S')
     df['ds'] = df['Time']
     df['y'] = data_for_training['y']
+    params = model["hyperparameters"]
     df=pd.DataFrame(df)
 
     #print(df.shape)
@@ -68,15 +69,15 @@ async def fit_and_predict(metric_name,data_store,start_time,end_time,prom_query,
                 old_model = model_from_json(fin.read())  # Load model
                 
             logger("Retraining ML model","warning")
-            model = Prophet(seasonality_mode='multiplicative').fit(df,init=stan_init(old_model))
+            prophet_model = Prophet(changepoint_prior_scale=params["changepoint_prior_scale"],seasonality_prior_scale=params["seasonality_prior_scale"],holidays_prior_scale=params["holidays_prior_scale"],changepoint_range=params["changepoint_range"],seasonality_mode=params["seasonality_mode"],).fit(df,init=stan_init(old_model))
         else:
             logger("Training ML model","warning")
-            model = Prophet(seasonality_mode='multiplicative').fit(df)
+            prophet_model = Prophet(changepoint_prior_scale=params["changepoint_prior_scale"],seasonality_prior_scale=params["seasonality_prior_scale"],holidays_prior_scale=params["holidays_prior_scale"],changepoint_range=params["changepoint_range"],seasonality_mode=params["seasonality_mode"]).fit(df)
         #if old_model_loc == None:
         with open(new_model_loc, 'w') as fout:
-            fout.write(model_to_json(model))  # Save model
-        future_df = model.make_future_dataframe(periods=periods, freq=frequency)
-        fcst = model.predict(future_df)
+            fout.write(model_to_json(prophet_model))  # Save model
+        future_df = prophet_model.make_future_dataframe(periods=periods, freq=frequency)
+        fcst = prophet_model.predict(future_df)
         fcst = fcst[-(periods):]
         logger("Predicting future data points","warning")
         response['status'] = 'success'
