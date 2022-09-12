@@ -57,7 +57,6 @@ def get_data_from_prometheus(prom_query, start_time, end_time, url):
     data_points = {}
     data_time = []
     data_value=[]
-    
     query = url+'/api/v1/query_range?query='+prom_query+'&start='+str(start_time)+'&end='+str(end_time)+'&step=15s'
     #print(query)
     result = prometheus(query)
