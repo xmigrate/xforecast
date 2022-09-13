@@ -73,8 +73,8 @@ async def forecast(metric_list):
 
     parameters
     ----------
-    metric_list: A list of dictionaries containing metric details.
-    url : Prometheus Url.
+    metric_list: A list of dictionaries containing metric details
+    url : database url
 
     """
     while True:
