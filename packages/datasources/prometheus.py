@@ -37,14 +37,14 @@ def prometheus(query):
         logger("Fetching data from prometheus - Failed","warning")
     return value
 
-def get_data_from_prometheus(prom_query, start_time, end_time, url):
+def get_data_from_prometheus(db_query, start_time, end_time, url):
     """Get the required data points by querying prometheus.
 
     Parameters
     ----------
-    prom_query: Prometheus query
-    start_time : start time for the prometheus query
-    end_time : end time for the prometheus query
+    db_query: database query
+    start_time : start time for the database query
+    end_time : end time for the database query
     url : Prometheus url
 
     Returns
@@ -58,7 +58,7 @@ def get_data_from_prometheus(prom_query, start_time, end_time, url):
     data_time = []
     data_value=[]
     
-    query = url+'/api/v1/query_range?query='+prom_query+'&start='+str(start_time)+'&end='+str(end_time)+'&step=15s'
+    query = url+'/api/v1/query_range?query='+db_query+'&start='+str(start_time)+'&end='+str(end_time)+'&step=15s'
     #print(query)
     result = prometheus(query)
     for elements in result:

@@ -27,15 +27,16 @@ def stan_init(m):
         res[pname] = m.params[pname][0]
     return res
 
-async def fit_and_predict(metric_name,data_store,start_time,end_time,prom_query,write_back_metric,model,prev_stime,prev_etime,periods=1,frequency='60s',old_model_loc=None,new_model_loc='./serialized_model.json'):
+async def fit_and_predict(metric_name,data_store,start_time,end_time,db_query,write_back_metric,model,prev_stime,prev_etime,periods=1,frequency='60s',old_model_loc=None,new_model_loc='./serialized_model.json'):
     """Predicts the values according to the data points recieved 
     
     Parameters
     ----------
     metric_name : metric name in prometheus
-    start_time : start time for the prometheus query
-    end_time : end time for the prometheus query
-    prom_query = Prometheus query
+    data_store : dictionary containing details of the database used for query
+    start_time : start time for the database query
+    end_time : end time for the database query
+    db_query = database query
     write_back_metric = name of the predicted/written metric
     model: dictionary containing the model name and its hyperparameters for tuning
     periods = number of data points predicted
@@ -50,9 +51,9 @@ async def fit_and_predict(metric_name,data_store,start_time,end_time,prom_query,
     prophet_model = None
     new_model_loc = './packages/models/'+metric_name+'.json'
     if data_store['name'] == 'prometheus':
-        data_for_training = get_data_from_prometheus(prom_query,start_time,end_time,data_store['url'])
+        data_for_training = get_data_from_prometheus(db_query,start_time,end_time,data_store['url'])
     elif data_store['name'] == "influxdb":
-        data_for_training = get_data_from_influxdb(data_store,start_time,end_time,prev_stime,prev_etime,prom_query)
+        data_for_training = get_data_from_influxdb(data_store,start_time,end_time,prev_stime,prev_etime,db_query)
     df={} 
     df['Time'] =  pd.to_datetime(data_for_training['Time'], format='%d/%m/%y %H:%M:%S')
     df['ds'] = df['Time']
