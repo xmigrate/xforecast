@@ -1,6 +1,6 @@
 from time import strftime
 import requests
-import json
+import json,yaml
 import datetime
 import snappy
 import calendar
@@ -14,9 +14,10 @@ from packages.datasources.prometheus_pb2 import (
     WriteRequest
 )
 
+with open('test/mock/mockdata.yaml') as f:
+    mockdata = yaml.load(f, Loader=SafeLoader)
 
-
-def prometheus(query):
+def prometheus(query,test=False):
     """Gets data from prometheus using the http api.
 
     Parameters
@@ -27,8 +28,11 @@ def prometheus(query):
     -------
     values: Result from prometheus
     """
+    if test == True:
+        result = mockdata['prom_results'][0]['results']['result']
+    else:
+        result = json.loads(requests.get(query).text)
 
-    result = json.loads(requests.get(query).text)
     value = result['data']['result']
     status=result['status']
     if value:
@@ -37,7 +41,7 @@ def prometheus(query):
         logger("Fetching data from prometheus - Failed","warning")
     return value
 
-def get_data_from_prometheus(prom_query, start_time, end_time, url):
+def get_data_from_prometheus(prom_query, start_time, end_time, url,test=False):
     """Get the required data points by querying prometheus.
 
     Parameters
@@ -58,8 +62,10 @@ def get_data_from_prometheus(prom_query, start_time, end_time, url):
     data_time = []
     data_value=[]
     query = url+'/api/v1/query_range?query='+prom_query+'&start='+str(start_time)+'&end='+str(end_time)+'&step=15s'
-    #print(query)
-    result = prometheus(query)
+    if test == True:
+        result = mockdata['getdata_results'][0]['results']['result']
+    else:
+        result = prometheus(query)
     for elements in result:
         values = elements['values']
         for element in values:
@@ -69,7 +75,10 @@ def get_data_from_prometheus(prom_query, start_time, end_time, url):
             data_value.append(element[1]) 
     data_points['Time'] = data_time
     data_points['y'] = data_value
-    return data_points
+    if test == True:
+        return str(data_points)
+    else:
+        return data_points
 
 def dt2ts(dt):
     """Converts a datetime object to UTC timestamp
@@ -77,7 +86,7 @@ def dt2ts(dt):
     """
     return calendar.timegm(dt.utctimetuple())
 
-def write_to_prometheus(val,tim,write_name,prom_url):
+def write_to_prometheus(val,tim,write_name,prom_url,test=False):
     """Write the predicted data to prometheus.
     
     Parameters
@@ -88,46 +97,50 @@ def write_to_prometheus(val,tim,write_name,prom_url):
 
     """
     #logger("Writing data to prometheus","warning")
-    write_request = WriteRequest()
+    if test == False:
+      
 
-    series = write_request.timeseries.add()
+        write_request = WriteRequest()
 
-    # name label always required
-    label = series.labels.add()
-    label.name = "__name__"
-    label.value = write_name
+        series = write_request.timeseries.add()
+
+        # name label always required
+        label = series.labels.add()
+        label.name = "__name__"
+        label.value = write_name
+        
+
+        sample = series.samples.add()
+        sample.value = val # your count?
+        dtl = int(tim.timestamp())
+        sample.timestamp = dtl *1000
     
-
-    sample = series.samples.add()
-    sample.value = val # your count?
-    dtl = int(tim.timestamp())
-
-    sample.timestamp = dtl *1000
-    
-    #print(sample.timestamp)
-    
+        #print(sample.timestamp)
+        
 
 
-    uncompressed = write_request.SerializeToString()
-    compressed = snappy.compress(uncompressed)
+        uncompressed = write_request.SerializeToString()
+        compressed = snappy.compress(uncompressed)
 
-    url = prom_url+"/api/v1/write"
-    headers = {
-        "Content-Encoding": "snappy",
-        "Content-Type": "application/x-protobuf",
-        "X-Prometheus-Remote-Write-Version": "0.1.0",
-        "User-Agent": "metrics-worker"
-    }
-    try:
-        response = requests.post(url, headers=headers, data=compressed)
-        #print(response)
-        response = str(response)
-        if response == '<Response [204]>':
-            #print("writing failed")
-            logger("writing data to prometheus - Success","warning")
-        else:
-            logger("writing data to prometheus - Failed","warning")
+        url = prom_url+"/api/v1/write"
+        headers = {
+            "Content-Encoding": "snappy",
+            "Content-Type": "application/x-protobuf",
+            "X-Prometheus-Remote-Write-Version": "0.1.0",
+            "User-Agent": "metrics-worker"
+        }
+        try:
+            response = requests.post(url, headers=headers, data=compressed)
+            #print(response)
+            response = str(response)
+            if response == '<Response [204]>':
+                #print("writing failed")
+                logger("writing data to prometheus - Success","warning")
+            else:
+                logger("writing data to prometheus - Failed","warning")
 
-    except Exception as e:
-        print(e)
-        logger(str(e),"error")
+        except Exception as e:
+            print(e)
+            logger(str(e),"error")
+    else:
+        assert val == 5000
