@@ -30,8 +30,8 @@ async def predict_every(metric_name,data_store,start_time,end_time,db_query,writ
     data_store : dictionary containing details of the database used for query
     start_time : start time for the database query
     end_time : end time for the database query
-    db_query = database query
-    write_back_metric = name of the predicted/written metric
+    db_query : database query
+    write_back_metric : name of the predicted/written metric
     forecast_every: at what interval the app does the predictions
     forecast_basedon: forecast based on past how many data points
     model: dictionary containing the model name and its hyperparameters for tuning
