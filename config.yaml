@@ -1,30 +1,5 @@
 
 metrics:
-- name: usage_user  #metric name in prometheus
-  data_store : 
-    name : influxdb   
-    url: 192.168.1.9
-    port: 8086
-    user : admin
-    pass : admin
-    db_name : telegraf
-    measurement : cpu
-  start_time: '2022-09-09 12:49:00'
-  end_time: '2022-09-09 12:50:00'
-  query: SELECT usage_user FROM "autogen"."cpu" WHERE time >= '2022-09-09 12:49:00' AND time <= '2022-09-09 12:50:00'
-  training_interval: 1h #amount of data should be used for training
-  forecast_duration: 5m #How data points should be predicted, here it will predict for 5 mins
-  forecast_every: 60 #At what interval the app do the predictions 
-  forecast_basedon: 60 #Forecast based on past how many data points
-  write_back_metric: forecast_cpu_time_new #Where should it write back the metrics
-  models : 
-    model_name: prophet
-    hyperparameters:
-      changepoint_prior_scale : 0.05 #determines the flexibility of the trend changes
-      seasonality_prior_scale : 10 #determines the flexibility of the seasonality changes
-      holidays_prior_scale : 10 #determines the flexibiity to fit the holidays
-      changepoint_range : 0.8 #proportion of the history where the trend changes are applied
-      seasonality_mode : additive #whether the mode of seasonality is additive or multiplicative
 - name: cpu_usage  #metric name in prometheus
   data_store : 
     name : influxdb   
@@ -34,9 +9,9 @@ metrics:
     pass : admin
     db_name : telegraf
     measurement : cpu
-  start_time: '2022-09-09 12:49:00'
-  end_time: '2022-09-09 12:50:00'
-  query: SELECT mean("usage_idle") *-1 +100 FROM "autogen"."cpu" WHERE ("host" = 'ip-172-31-31-81') AND time >= '2022-09-09 12:49:00' AND time <= '2022-09-09 12:50:00' GROUP BY time(10s) 
+  start_time: '2022-09-14 11:19:00'
+  end_time: '2022-09-14 11:20:00'
+  query: SELECT mean("usage_idle") *-1 +100 FROM "autogen"."cpu" WHERE ("host" = 'ip-172-31-31-81') AND time >= '2022-09-14 11:19:00' AND time <= '2022-09-14 11:20:00' GROUP BY time(10s) 
   training_interval: 1h #amount of data should be used for training
   forecast_duration: 5m #How data points should be predicted, here it will predict for 5 mins
   forecast_every: 60 #At what interval the app do the predictions 
@@ -53,9 +28,9 @@ metrics:
 - name: memory_usage  #metric name in prometheus
   data_store : 
     name : prometheus  
-    url: http://host.docker.internal:9000
-  start_time: '2022-09-09T12:49:00.000Z'
-  end_time: '2022-09-09T12:50:00.000Z'
+    url: http://192.168.1.9:9090
+  start_time: '2022-09-14 11:19:00'
+  end_time: '2022-09-14 11:20:00'
   query: 100 - ((node_memory_MemAvailable_bytes{instance="node-exporter:9100"} * 100) / node_memory_MemTotal_bytes{instance="node-exporter:9100"})
   training_interval: 1h #amount of data should be used for training
   forecast_duration: 5m #How data points should be predicted, here it will predict for 5 mins
@@ -70,6 +45,8 @@ metrics:
       holidays_prior_scale : 10 #determines the flexibiity to fit the holidays
       changepoint_range : 0.8 #proportion of the history where the trend changes are applied
       seasonality_mode : additive #whether the mode of seasonality is additive or multiplicative
+
+
 
 
 

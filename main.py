@@ -1,7 +1,7 @@
 import yaml
 import asyncio
 import time
-from datetime import datetime,timedelta
+from datetime import datetime,timedelta,timezone
 from packages.datasources.logger import *
 from packages.helper.fit_and_predict import *
 from os.path import exists
@@ -60,9 +60,15 @@ async def predict_every(metric_name,data_store,start_time,end_time,db_query,writ
                     start_time = end_time - timedelta(minutes=t)
                     start_time = start_time.strftime('%Y-%m-%d %H:%M:%S')
                     end_time = end_time.strftime('%Y-%m-%d %H:%M:%S')
+                    logger(start_time,"warning")
                 await fit_and_predict(metric_name,data_store,start_time,end_time,db_query,write_back_metric,model,prev_stime,prev_etime,periods=periods,frequency='60s',old_model_loc=old_model_loc)
             else:
                 #print("og")
+                if data_store['name'] == 'prometheus':
+                    start_time = datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S')
+                    end_time = datetime.strptime(end_time, '%Y-%m-%d %H:%M:%S')
+                    start_time = int(start_time.replace(tzinfo=timezone.utc).timestamp())
+                    end_time = int(end_time.replace(tzinfo=timezone.utc).timestamp())
                 await fit_and_predict(metric_name,data_store,start_time,end_time,db_query,write_back_metric,model,prev_stime,prev_etime,periods=periods,frequency='60s',old_model_loc=None)
             n+=1
             await asyncio.sleep((forecast_every))
@@ -74,7 +80,6 @@ async def forecast(metric_list):
     parameters
     ----------
     metric_list: A list of dictionaries containing metric details
-    url : database url
 
     """
     while True:
