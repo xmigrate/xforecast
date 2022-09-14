@@ -6,7 +6,7 @@ from packages.datasources.logger import *
 
 
 
-def get_data_from_influxdb(data_store,start_time,end_time,prev_stime,prev_etime,prom_query):
+def get_data_from_influxdb(data_store,start_time,end_time,prev_stime,prev_etime,db_query):
     url = data_store['url']
     port = data_store['port']
     username = data_store['user']
@@ -16,9 +16,9 @@ def get_data_from_influxdb(data_store,start_time,end_time,prev_stime,prev_etime,
 
     
     
-    prom_query = prom_query.replace(prev_stime,start_time)
-    prom_query = prom_query.replace(prev_etime,end_time)
-    query=prom_query
+    db_query = db_query.replace(prev_stime,start_time)
+    db_query = db_query.replace(prev_etime,end_time)
+    query=db_query
  
     value = client.query(query)
 

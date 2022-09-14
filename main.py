@@ -21,16 +21,17 @@ async def main():
         metric_list.append(metric)
     await forecast(metric_list)
         
-async def predict_every(metric_name,data_store,start_time,end_time,prom_query,write_back_metric,forecast_every,forecast_basedon,model):
+async def predict_every(metric_name,data_store,start_time,end_time,db_query,write_back_metric,forecast_every,forecast_basedon,model):
     """Calls fit_and_predict function at the required intervals
 
     Parameters
     ----------
-    metric_name : metric name in prometheus
-    start_time : start time for the prometheus query
-    end_time : end time for the prometheus query
-    prom_query = Prometheus query
-    write_back_metric = name of the predicted/written metric
+    metric_name : metric name in database
+    data_store : dictionary containing details of the database used for query
+    start_time : start time for the database query
+    end_time : end time for the database query
+    db_query : database query
+    write_back_metric : name of the predicted/written metric
     forecast_every: at what interval the app does the predictions
     forecast_basedon: forecast based on past how many data points
     model: dictionary containing the model name and its hyperparameters for tuning
@@ -59,10 +60,10 @@ async def predict_every(metric_name,data_store,start_time,end_time,prom_query,wr
                     start_time = end_time - timedelta(minutes=t)
                     start_time = start_time.strftime('%Y-%m-%d %H:%M:%S')
                     end_time = end_time.strftime('%Y-%m-%d %H:%M:%S')
-                await fit_and_predict(metric_name,data_store,start_time,end_time,prom_query,write_back_metric,model,prev_stime,prev_etime,periods=periods,frequency='60s',old_model_loc=old_model_loc)
+                await fit_and_predict(metric_name,data_store,start_time,end_time,db_query,write_back_metric,model,prev_stime,prev_etime,periods=periods,frequency='60s',old_model_loc=old_model_loc)
             else:
                 #print("og")
-                await fit_and_predict(metric_name,data_store,start_time,end_time,prom_query,write_back_metric,model,prev_stime,prev_etime,periods=periods,frequency='60s',old_model_loc=None)
+                await fit_and_predict(metric_name,data_store,start_time,end_time,db_query,write_back_metric,model,prev_stime,prev_etime,periods=periods,frequency='60s',old_model_loc=None)
             n+=1
             await asyncio.sleep((forecast_every))
 
@@ -72,8 +73,8 @@ async def forecast(metric_list):
 
     parameters
     ----------
-    metric_list: A list of dictionaries containing metric details.
-    url : Prometheus Url.
+    metric_list: A list of dictionaries containing metric details
+    url : database url
 
     """
     while True:
