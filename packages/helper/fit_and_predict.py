@@ -34,15 +34,16 @@ async def fit_and_predict(metric_name,data_store,start_time,end_time,db_query,wr
     Parameters
     ----------
     metric_name : metric name in prometheus
-    start_time : start time for the prometheus query
-    end_time : end time for the prometheus query
-    prom_query = Prometheus query
-    write_back_metric = name of the predicted/written metric
+    data_store : dictionary containing details of the database used for query
+    start_time : start time for the database query
+    end_time : end time for the database query
+    db_query : database query
+    write_back_metric : name of the predicted/written metric
     model: dictionary containing the model name and its hyperparameters for tuning
-    periods = number of data points predicted
-    frequency =  
-    old_model_location = location of the trained model
-    new_model_location = location where the newly trained model should be saved
+    periods : number of data points predicted
+    frequency :  
+    old_model_location : location of the trained model
+    new_model_location : location where the newly trained model should be saved
 
     """
 

@@ -27,7 +27,10 @@ def prometheus(query,test=False):
     Returns
     -------
     values: Result from prometheus
+
     """
+
+
     if test == True:
         result = mockdata['prom_results'][0]['results']['result']
     else:
@@ -46,9 +49,9 @@ def get_data_from_prometheus(db_query, start_time, end_time, url,test=False):
 
     Parameters
     ----------
-    prom_query: Prometheus query
-    start_time : start time for the prometheus query
-    end_time : end time for the prometheus query
+    db_query: database query
+    start_time : start time for the database query
+    end_time : end time for the database query
     url : Prometheus url
 
     Returns
@@ -94,9 +97,9 @@ def write_to_prometheus(val,tim,write_name,prom_url,test=False):
     val: Value to be written
     tim: Which time the value should be written
     write_name: Custom metric name to be written
-
+    
     """
-    #logger("Writing data to prometheus","warning")
+
     
       
 

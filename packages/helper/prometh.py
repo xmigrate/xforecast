@@ -14,13 +14,13 @@ def prometheus(query):
     value = result['data']['result']
     return value
 
-def get_data_from_prometheus(metric_name,prom_query, start_time, end_time, url):
+def get_data_from_prometheus(metric_name,db_query, start_time, end_time, url):
     data_points = {}
     data_time=[]
     data_value=[]
     for i in range(len(metric_name)):
         if metric_name[i]:
-            query = url+'/api/v1/query_range?query='+prom_query[i]+'&start='+start_time[i]+'&end='+end_time[i]+'&step=15s'
+            query = url+'/api/v1/query_range?query='+db_query[i]+'&start='+start_time[i]+'&end='+end_time[i]+'&step=15s'
             #print(query)
             result = prometheus(query)
             for elements in result:
@@ -70,10 +70,10 @@ if __name__ == "__main__":
     start_time = metric_dict['start_time']
     end_time = metric_dict['end_time']
     url = data['prometheus_url']
-    prom_query = metric_dict['query']
+    db_query = metric_dict['query']
     forecast_every = metric_dict['forecast_every']
 
-    data_for_training = get_data_from_prometheus(metric_name,prom_query, start_time, end_time, url)
+    data_for_training = get_data_from_prometheus(metric_name,db_query, start_time, end_time, url)
     print(data_for_training)
     
 
