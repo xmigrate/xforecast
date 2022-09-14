@@ -41,7 +41,7 @@ def prometheus(query,test=False):
         logger("Fetching data from prometheus - Failed","warning")
     return value
 
-def get_data_from_prometheus(prom_query, start_time, end_time, url,test=False):
+def get_data_from_prometheus(db_query, start_time, end_time, url,test=False):
     """Get the required data points by querying prometheus.
 
     Parameters
@@ -61,7 +61,7 @@ def get_data_from_prometheus(prom_query, start_time, end_time, url,test=False):
     data_points = {}
     data_time = []
     data_value=[]
-    query = url+'/api/v1/query_range?query='+prom_query+'&start='+str(start_time)+'&end='+str(end_time)+'&step=15s'
+    query = url+'/api/v1/query_range?query='+db_query+'&start='+str(start_time)+'&end='+str(end_time)+'&step=15s'
     if test == True:
         result = mockdata['getdata_results'][0]['results']['result']
     else:
@@ -97,38 +97,39 @@ def write_to_prometheus(val,tim,write_name,prom_url,test=False):
 
     """
     #logger("Writing data to prometheus","warning")
-    if test == False:
+    
       
 
-        write_request = WriteRequest()
+    write_request = WriteRequest()
 
-        series = write_request.timeseries.add()
+    series = write_request.timeseries.add()
 
-        # name label always required
-        label = series.labels.add()
-        label.name = "__name__"
-        label.value = write_name
-        
-
-        sample = series.samples.add()
-        sample.value = val # your count?
-        dtl = int(tim.timestamp())
-        sample.timestamp = dtl *1000
+    # name label always required
+    label = series.labels.add()
+    label.name = "__name__"
+    label.value = write_name
     
-        #print(sample.timestamp)
-        
+
+    sample = series.samples.add()
+    sample.value = val # your count?
+    dtl = int(tim.timestamp())
+    sample.timestamp = dtl *1000
+
+    #print(sample.timestamp)
+    
 
 
-        uncompressed = write_request.SerializeToString()
-        compressed = snappy.compress(uncompressed)
-
-        url = prom_url+"/api/v1/write"
-        headers = {
-            "Content-Encoding": "snappy",
-            "Content-Type": "application/x-protobuf",
-            "X-Prometheus-Remote-Write-Version": "0.1.0",
-            "User-Agent": "metrics-worker"
-        }
+    uncompressed = write_request.SerializeToString()
+    compressed = snappy.compress(uncompressed)
+    
+    url = prom_url+"/api/v1/write"
+    headers = {
+        "Content-Encoding": "snappy",
+        "Content-Type": "application/x-protobuf",
+        "X-Prometheus-Remote-Write-Version": "0.1.0",
+        "User-Agent": "metrics-worker"
+    }
+    if test == False:
         try:
             response = requests.post(url, headers=headers, data=compressed)
             #print(response)

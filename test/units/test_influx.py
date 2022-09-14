@@ -4,7 +4,7 @@ with open('test/mock/mockdata.yaml') as f:
     mockdata = yaml.load(f, Loader=SafeLoader)
 
 def test_influx_getdata():
-    data_store = 'mockdatastore'
+    data_store = {'url':'localhost','port':8086,'user':'admin','pass':'admin','db_name':'telegraf','measurement':'cpu' }
     start_time = '2022-09-12 08:53:00'
     end_time = '2022-09-12 08:54:00'
     prev_stime = '2022-09-12 08:50:00'
@@ -17,5 +17,5 @@ def test_influx_writedata():
     val = 500
     tim = 1650000
     write_name = 'mockname'
-    data_store = "mockdatastore"
+    data_store = {'url':'localhost','port':8086,'user':'admin','pass':'admin','db_name':'telegraf','measurement':'cpu' }
     r = write_data_to_influxdb(val,tim,write_name,data_store,test=True)

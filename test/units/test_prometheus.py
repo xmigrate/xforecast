@@ -17,7 +17,7 @@ def test_getdata():
     assert r == mockdata['getdata_results'][1]['data_points']['data_point']
 def test_writedata():
     val = 5000
-    tim = 1600000
+    tim = datetime.datetime(2023, 9, 12, 8, 53)
     write_name = "name"
     prom_url = "localhost:9090"
     write_to_prometheus(val,tim,write_name,prom_url,test=True)

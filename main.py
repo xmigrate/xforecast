@@ -21,7 +21,7 @@ async def main():
         metric_list.append(metric)
     await forecast(metric_list)
         
-async def predict_every(metric_name,data_store,start_time,end_time,prom_query,write_back_metric,forecast_every,forecast_basedon,model):
+async def predict_every(metric_name,data_store,start_time,end_time,db_query,write_back_metric,forecast_every,forecast_basedon,model):
     """Calls fit_and_predict function at the required intervals
 
     Parameters
@@ -59,7 +59,8 @@ async def predict_every(metric_name,data_store,start_time,end_time,prom_query,wr
                     start_time = end_time - timedelta(minutes=t)
                     start_time = start_time.strftime('%Y-%m-%d %H:%M:%S')
                     end_time = end_time.strftime('%Y-%m-%d %H:%M:%S')
-                await fit_and_predict(metric_name,data_store,start_time,end_time,prom_query,write_back_metric,model,prev_stime,prev_etime,periods=periods,frequency='60s',old_model_loc=old_model_loc)
+                    logger(start_time,"warning")
+                await fit_and_predict(metric_name,data_store,start_time,end_time,db_query,write_back_metric,model,prev_stime,prev_etime,periods=periods,frequency='60s',old_model_loc=old_model_loc)
             else:
                 #print("og")
                 if data_store['name'] == 'prometheus':
@@ -67,7 +68,7 @@ async def predict_every(metric_name,data_store,start_time,end_time,prom_query,wr
                     end_time = datetime.strptime(end_time, '%Y-%m-%d %H:%M:%S')
                     start_time = int(start_time.replace(tzinfo=timezone.utc).timestamp())
                     end_time = int(end_time.replace(tzinfo=timezone.utc).timestamp())
-                await fit_and_predict(metric_name,data_store,start_time,end_time,prom_query,write_back_metric,model,prev_stime,prev_etime,periods=periods,frequency='60s',old_model_loc=None)
+                await fit_and_predict(metric_name,data_store,start_time,end_time,db_query,write_back_metric,model,prev_stime,prev_etime,periods=periods,frequency='60s',old_model_loc=None)
             n+=1
             await asyncio.sleep((forecast_every))
 
