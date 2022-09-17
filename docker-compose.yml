@@ -6,5 +6,5 @@ services:
     ports:
       - "9100:9100"
     volumes:
-      - ${PWD}/config.yaml:/app/workspace/config.yaml
+      - ./config.yaml:/app/workspace/config.yaml
 

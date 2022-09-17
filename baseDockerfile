@@ -2,7 +2,7 @@ FROM python:3.7-alpine
 
 WORKDIR .
 
-COPY ./xforecast/requirements.txt ./requirements.txt
+COPY ./requirements.txt ./requirements.txt
 
 RUN apk update \
     && apk --no-cache --update add --virtual build-dependencies build-base gcc snappy-dev zlib-dev jpeg-dev openjpeg-dev \
