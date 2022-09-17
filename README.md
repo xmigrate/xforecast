@@ -64,7 +64,6 @@ As a next step you can create dashboards in grafana or your favourite visualisat
 If you have multiple metrics to forecast, then you can append the details of those metrics to the configuration.
 
 ## Feature Roadmap
-- Support for influxdb
 - Support for multiple forecasting ML models
 - Support for auto-ml to automatically decide right model for each metric
 - Web dashboard to create the metric predictions and monitor the prediction accuracy and it's health
