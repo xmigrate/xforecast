@@ -86,10 +86,10 @@ async def fit_and_predict(metric_name,data_store,start_time,end_time,db_query,wr
         #if old_model_loc == None:
         with open(new_model_loc, 'w') as fout:
             fout.write(model_to_json(prophet_model))  # Save model
+        logger("Predicting future data points","info")
         future_df = prophet_model.make_future_dataframe(periods=periods, freq=frequency)
         fcst = prophet_model.predict(future_df)
         fcst = fcst[-(periods):]
-        logger("Predicting future data points","info")
         response['status'] = 'success'
         response['model_location'] = new_model_loc
         response['yhat'] = fcst['yhat']
