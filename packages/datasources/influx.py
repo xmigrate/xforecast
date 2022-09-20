@@ -48,9 +48,9 @@ def get_data_from_influxdb(data_store,start_time,end_time,prev_stime,prev_etime,
         value = mockdata['influx_results'][0]['results']['result']
         
     if value:
-        logger("Fetching data from influxdb - Success","warning")
+        logger("Fetching data from influxdb - Success","info")
     else:
-        logger("Fetching data from influxdb - Failed","warning")
+        logger("Fetching data from influxdb - Failed","error")
     data_points = {}
     data_time = []
     data_value=[]
@@ -99,9 +99,9 @@ def write_data_to_influxdb(val,tim,write_name,data_store,test=False):
     json_payload.append(data)
     if test == False:
         if client.write_points(json_payload):
-            logger("Writing data to influxdb - Success","warning")
+            logger("Writing data to influxdb - Success","info")
         else:
-            logger("Writing data to influxdb - Failed","warning")
+            logger("Writing data to influxdb - Failed","error")
     else:
         assert measurement == 'cpu'
         

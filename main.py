@@ -14,7 +14,7 @@ async def main():
     with open('./config.yaml') as f:
         data = yaml.load(f, Loader=SafeLoader)
     #print(data)
-    logger("Reading configuration","warning")
+    logger("Reading configuration","info")
 
     metric_list = []
     for metric in data['metrics']:
@@ -60,7 +60,6 @@ async def predict_every(metric_name,data_store,start_time,end_time,db_query,writ
                     start_time = end_time - timedelta(minutes=t)
                     start_time = start_time.strftime('%Y-%m-%d %H:%M:%S')
                     end_time = end_time.strftime('%Y-%m-%d %H:%M:%S')
-                    logger(start_time,"warning")
                 await fit_and_predict(metric_name,data_store,start_time,end_time,db_query,write_back_metric,model,prev_stime,prev_etime,periods=periods,frequency='60s',old_model_loc=old_model_loc)
             else:
                 #print("og")
