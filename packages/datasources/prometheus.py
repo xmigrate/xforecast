@@ -39,9 +39,9 @@ def prometheus(query,test=False):
     value = result['data']['result']
     status=result['status']
     if value:
-        logger("Fetching data from prometheus - Success","warning")
+        logger("Fetching data from prometheus - Success","info")
     else:
-        logger("Fetching data from prometheus - Failed","warning")
+        logger("Fetching data from prometheus - Failed","error")
     return value
 
 def get_data_from_prometheus(db_query, start_time, end_time, url,test=False):
@@ -60,7 +60,6 @@ def get_data_from_prometheus(db_query, start_time, end_time, url,test=False):
     
     """
 
-    logger("Fetching data from prometheus","warning")
     data_points = {}
     data_time = []
     data_value=[]
@@ -139,9 +138,9 @@ def write_to_prometheus(val,tim,write_name,prom_url,test=False):
             response = str(response)
             if response == '<Response [204]>':
                 #print("writing failed")
-                logger("writing data to prometheus - Success","warning")
+                logger("writing data to prometheus - Success","info")
             else:
-                logger("writing data to prometheus - Failed","warning")
+                logger("writing data to prometheus - Failed","error")
 
         except Exception as e:
             print(e)

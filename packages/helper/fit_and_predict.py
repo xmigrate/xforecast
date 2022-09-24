@@ -78,18 +78,18 @@ async def fit_and_predict(metric_name,data_store,start_time,end_time,db_query,wr
             with open(old_model_loc, 'r') as fin:
                 old_model = model_from_json(fin.read())  # Load model
                 
-            logger("Retraining ML model","warning")
+            logger("Retraining ML model","info")
             prophet_model = Prophet(changepoint_prior_scale=params["changepoint_prior_scale"],seasonality_prior_scale=params["seasonality_prior_scale"],holidays_prior_scale=params["holidays_prior_scale"],changepoint_range=params["changepoint_range"],seasonality_mode=params["seasonality_mode"],).fit(df,init=stan_init(old_model))
         else:
-            logger("Training ML model","warning")
+            logger("Training ML model","info")
             prophet_model = Prophet(changepoint_prior_scale=params["changepoint_prior_scale"],seasonality_prior_scale=params["seasonality_prior_scale"],holidays_prior_scale=params["holidays_prior_scale"],changepoint_range=params["changepoint_range"],seasonality_mode=params["seasonality_mode"]).fit(df)
         #if old_model_loc == None:
         with open(new_model_loc, 'w') as fout:
             fout.write(model_to_json(prophet_model))  # Save model
+        logger("Predicting future data points","info")
         future_df = prophet_model.make_future_dataframe(periods=periods, freq=frequency)
         fcst = prophet_model.predict(future_df)
         fcst = fcst[-(periods):]
-        logger("Predicting future data points","warning")
         response['status'] = 'success'
         response['model_location'] = new_model_loc
         response['yhat'] = fcst['yhat']
